@@ -4,6 +4,8 @@ This service is responsible for downloading firmware files from vendor repositor
 
 ## Diagram
 
+![Syncer](docs/syncer.svg)
+
 
 ## Development
 

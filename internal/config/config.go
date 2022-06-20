@@ -24,13 +24,13 @@ type Provider struct {
 }
 
 type Firmware struct {
-	Version       string   `yaml:"version"`
-	Models        []string `yaml:"models"`
-	ComponentSlug string   `yaml:"componentslug"`
-	Utility       string   `yaml:"utility"`
-	UpstreamURL   string   `yaml:"upstreamURL"`
-	Filename      string   `yaml:"filename"`
-	FileCheckSum  string   `yaml:"checksum"`
+	Version       string `yaml:"version"`
+	Model         string `yaml:"model"`
+	ComponentSlug string `yaml:"componentslug"`
+	Utility       string `yaml:"utility"`
+	UpstreamURL   string `yaml:"upstreamURL"`
+	Filename      string `yaml:"filename"`
+	FileCheckSum  string `yaml:"checksum"`
 }
 
 // Filestore declares configuration for where firmware are stored

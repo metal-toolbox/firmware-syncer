@@ -4,9 +4,6 @@ import (
 	"context"
 	"path"
 
-	"github.com/packethost/fup/internal/syncer/providers"
-	"github.com/packethost/fup/internal/utils"
-	"github.com/packethost/fup/pkg/model"
 	"github.com/pkg/errors"
 )
 

@@ -193,6 +193,9 @@ func initSource(ctx context.Context, srcURL string) (rcloneFs.Fs, error) {
 	switch {
 	case strings.HasPrefix(srcURL, "http://"), strings.HasPrefix(srcURL, "https://"):
 		fs, err = initHTTPFs(ctx, srcURL)
+		if err != nil {
+			return nil, errors.Wrap(ErrInitHTTPDownloader, err.Error())
+		}
 	default:
 		return nil, errors.Wrap(ErrSourceURL, srcURL)
 	}

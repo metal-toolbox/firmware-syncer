@@ -12,12 +12,11 @@ require (
 require (
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/metal-toolbox/ironlib v0.1.0
-	github.com/rclone/rclone v1.58.1
+	github.com/rclone/rclone v1.56.2
 	github.com/stretchr/testify v1.7.1
 )
 
 require (
-	github.com/Max-Sum/base32768 v0.0.0-20191205131208-7937843c71d5 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/aalpar/deheap v0.0.0-20210914013432-0cc84d79dec3 // indirect
 	github.com/abbot/go-http-auth v0.4.0 // indirect

@@ -15,9 +15,8 @@ func (d *DellDUP) signDUPFile(ctx context.Context) error {
 			return err
 		}
 
-		// TODO: fix metrics collection
 		// collect metrics on return
-		//defer d.syncCtx.Metrics.FromDownloader(downloader, d.syncCtx.HWVendor, providers.ActionSign)
+		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSign)
 
 		srcPath := path.Join(
 			"/firmware",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"path"
 
+	"github.com/equinixmetal/firmware-syncer/internal/providers"
 	"github.com/sirupsen/logrus"
 )
 
@@ -85,9 +86,8 @@ func (d *DellDUP) syncDUPFiles(ctx context.Context) error {
 			return err
 		}
 
-		// TODO: fix metrics collection
 		// collect metrics on return
-		//defer d.syncCtx.Metrics.FromDownloader(downloader, d.syncCtx.HWVendor, providers.ActionSync)
+		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSync)
 
 		downloadPath := path.Join(
 			"/firmware",

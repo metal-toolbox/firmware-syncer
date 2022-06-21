@@ -17,9 +17,8 @@ func (d *DellDUP) Verify(ctx context.Context) error {
 			return err
 		}
 
-		// TODO: fix metrics collection
 		// collect metrics from downloader
-		//defer d.syncCtx.Metrics.FromDownloader(downloader, d.syncCtx.HWVendor, providers.ActionVerify)
+		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionVerify)
 
 		d.logger.WithFields(logrus.Fields{"file": downloader.DstURL()}).Trace("verifying Dell DUP file")
 

@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"os"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/equinixmetal/firmware-syncer/internal/config"
 	"github.com/equinixmetal/firmware-syncer/internal/providers"
+	"github.com/equinixmetal/firmware-syncer/internal/providers/dell"
 )
 
 var (
@@ -23,20 +25,39 @@ type Syncer struct {
 }
 
 // New returns a Syncer object configured with Providers
-func New(configFile string, logger *logrus.Logger) *Syncer {
-	// TODO: read config file
-	// initilize providers
+func New(configFile string, logLevel int) *Syncer {
+	// Setup logger
+	var logger = logrus.New()
+	logger.Out = os.Stdout
+
+	switch logLevel {
+	case LogLevelDebug:
+		logger.SetLevel(logrus.DebugLevel)
+	case LogLevelTrace:
+		logger.SetLevel(logrus.TraceLevel)
+	default:
+		logger.SetLevel(logrus.InfoLevel)
+	}
+
+	// Load configuration
 	cfg, err := config.LoadSyncerConfig(configFile)
 	if err != nil {
-		// log the error and exit
+		logger.Error(err.Error())
 	}
 	var provs []providers.Provider
 	for _, cfgProvider := range cfg.Providers {
-		// init the provider based on the cfg.provider
-		p := providers.New(cfgProvider)
-		provs = append(provs, p)
-
+		switch cfgProvider.Vendor {
+		case "dell":
+			dellProvider, err := dell.New(context.TODO(), cfgProvider, logger)
+			if err != nil {
+				logger.Error("Failed to initialize Dell provider: " + err.Error())
+			}
+			provs = append(provs, dellProvider)
+		default:
+			logger.Error("Provider not supported: " + cfgProvider.Vendor)
+		}
 	}
+
 	return &Syncer{
 		config:    cfg,
 		logger:    logger,
@@ -49,7 +70,10 @@ func (s *Syncer) SyncFirmwares(ctx context.Context, dryRun bool) error {
 	s.dryRun = dryRun
 
 	for _, provider := range s.providers {
-		provider.Sync(ctx)
+		err := provider.Sync(ctx)
+		if err != nil {
+			s.logger.Error("Failed to sync: " + err.Error())
+		}
 	}
 
 	return nil

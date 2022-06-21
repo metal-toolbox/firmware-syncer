@@ -73,6 +73,7 @@ type DellDUP struct {
 	firmwares    []*config.Firmware
 	signer       *providers.Signer
 	logger       *logrus.Logger
+	metrics      *providers.Metrics
 }
 
 // New returns a new DellDUP firmware syncer object
@@ -128,13 +129,14 @@ func New(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logge
 		firmwares:    firmwares,
 		signer:       s,
 		logger:       logger,
+		metrics:      providers.NewMetrics(),
 	}, nil
 }
 
 // Stats implements the Syncer interface to return metrics collected on Object, byte transfer stats
-//func (d *Dell) Stats() *providers.Metrics {
-//	return d.Metrics
-//}
+func (d *DellDUP) Stats() *providers.Metrics {
+	return d.metrics
+}
 
 // initDownloaderDUP initializes the dell DUP file downloader
 // downloaders provides methods to Copy and Sync update file(s) from the source to the destination

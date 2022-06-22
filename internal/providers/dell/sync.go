@@ -9,7 +9,7 @@ import (
 )
 
 // Sync implements the Syncer interface to fetch, checksum and sign firmware
-func (d *DellDUP) Sync(ctx context.Context) error {
+func (d *DUP) Sync(ctx context.Context) error {
 	if !d.force {
 		// verify files are in sync before proceeding
 		// this is done here because we don't want to sync broken repository metadata
@@ -78,7 +78,7 @@ func (d *DellDUP) Sync(ctx context.Context) error {
 //	return nil
 //}
 
-func (d *DellDUP) syncDUPFiles(ctx context.Context) error {
+func (d *DUP) syncDUPFiles(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		// dst path for DUP files - /firmware/dell/<model>/<component>/foo.bin
 		downloader, err := initDownloaderDUP(ctx, fw.UpstreamURL, d.filestoreCfg)

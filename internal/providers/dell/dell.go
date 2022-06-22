@@ -65,8 +65,8 @@ var (
 	ErrUpdateUtil       = errors.New("unsupported update utility")
 )
 
-// DellDUP implements the Provider interface methods to retrieve dell DUP firmware files
-type DellDUP struct {
+// DUP implements the Provider interface methods to retrieve dell DUP firmware files
+type DUP struct {
 	force        bool
 	config       *config.Provider
 	filestoreCfg *config.Filestore
@@ -76,8 +76,8 @@ type DellDUP struct {
 	metrics      *providers.Metrics
 }
 
-// New returns a new DellDUP firmware syncer object
-func New(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logger) (providers.Provider, error) {
+// NewDUP returns a new DUP firmware syncer object
+func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logger) (providers.Provider, error) {
 	// RepositoryURL required
 	if cfgProvider.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -121,7 +121,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logge
 		return nil, err
 	}
 
-	return &DellDUP{
+	return &DUP{
 		// TODO: fix force parameter to be configurable
 		force:        true,
 		config:       cfgProvider,
@@ -134,7 +134,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logge
 }
 
 // Stats implements the Syncer interface to return metrics collected on Object, byte transfer stats
-func (d *DellDUP) Stats() *providers.Metrics {
+func (d *DUP) Stats() *providers.Metrics {
 	return d.metrics
 }
 

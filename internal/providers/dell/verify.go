@@ -10,7 +10,7 @@ import (
 
 // Verify validates the files are in sync, checksummed and accessible from the RepositoryURL endpoint
 // returns nil if verify was successful
-func (d *DellDUP) Verify(ctx context.Context) error {
+func (d *DUP) Verify(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		downloader, err := initDownloaderDUP(ctx, fw.UpstreamURL, d.filestoreCfg)
 		if err != nil {

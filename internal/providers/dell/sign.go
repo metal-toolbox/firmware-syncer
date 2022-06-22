@@ -8,7 +8,7 @@ import (
 )
 
 // signDUP downloads the DUP file from the filestore, checksums, signs and uploads the checksum and signature files
-func (d *DellDUP) signDUPFile(ctx context.Context) error {
+func (d *DUP) signDUPFile(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		downloader, err := initDownloaderDUP(ctx, fw.UpstreamURL, d.filestoreCfg)
 		if err != nil {

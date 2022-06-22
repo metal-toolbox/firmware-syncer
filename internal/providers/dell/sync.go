@@ -48,36 +48,6 @@ func (d *DUP) Sync(ctx context.Context) error {
 	return nil
 }
 
-//// syncDSU repo syncs the DSU repositories
-//func (d *DellDSU) syncDSURepo(ctx context.Context) error {
-//	// init downloaders to fetch dsu repo primary.xml.gz, checksum, signature files
-//	downloaders, err := initDownloadersDSU(ctx, d.config)
-//	if err != nil {
-//		return err
-//	}
-//
-//	for _, downloader := range downloaders {
-//		d.logger.WithFields(
-//			logrus.Fields{
-//				"src": downloader.SrcURL(),
-//				"dst": downloader.FilestoreURL() + downloader.FilestoreRootDir(),
-//			},
-//		).Trace("sync DSU repo")
-//
-//		err = downloader.Sync(ctx)
-//		if err != nil {
-//			return err
-//		}
-//
-//		// TODO: Fix metrics collection
-//		// collect metrics
-//		// nolint:gocritic // defer by intent
-//		//defer d.syncCtx.Metrics.FromDownloader(downloader, d.syncCtx.HWVendor, providers.ActionSync)
-//	}
-//
-//	return nil
-//}
-
 func (d *DUP) syncDUPFiles(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		// dst path for DUP files - /firmware/dell/<model>/<component>/foo.bin

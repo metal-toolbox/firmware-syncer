@@ -86,9 +86,6 @@ func (d *DellDUP) syncDUPFiles(ctx context.Context) error {
 			return err
 		}
 
-		// collect metrics on return
-		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSync)
-
 		downloadPath := path.Join(
 			"/firmware",
 			UpdateFilesPath(
@@ -107,6 +104,9 @@ func (d *DellDUP) syncDUPFiles(ctx context.Context) error {
 		).Trace("sync DUP")
 
 		err = downloader.CopyToFilestore(ctx, downloadPath, fw.Filename)
+		// collect metrics from downloader
+		d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSync)
+
 		if err != nil {
 			return err
 		}

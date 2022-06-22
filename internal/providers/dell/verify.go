@@ -17,9 +17,6 @@ func (d *DellDUP) Verify(ctx context.Context) error {
 			return err
 		}
 
-		// collect metrics from downloader
-		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionVerify)
-
 		d.logger.WithFields(logrus.Fields{"file": downloader.DstURL()}).Trace("verifying Dell DUP file")
 
 		err = providers.VerifyUpdateURL(
@@ -32,10 +29,14 @@ func (d *DellDUP) Verify(ctx context.Context) error {
 			d.signer,
 			d.logger,
 		)
+		// collect metrics from downloader
+		d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionVerify)
+
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

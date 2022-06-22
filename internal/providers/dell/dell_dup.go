@@ -78,13 +78,13 @@ type DellDUP struct {
 
 // New returns a new DellDUP firmware syncer object
 func New(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logger) (providers.Provider, error) {
-
 	// RepositoryURL required
 	if cfgProvider.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
 	var firmwares []*config.Firmware
+
 	for _, fw := range cfgProvider.Firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {

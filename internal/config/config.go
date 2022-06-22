@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrProviderAttributes = errors.New("Provider config missing required attribute(s)")
+	ErrProviderAttributes = errors.New("provider config missing required attribute(s)")
 	ErrNoFileChecksum     = errors.New("file upstreamURL declared with no checksum (Provider.UtilityChecksum)")
 )
 

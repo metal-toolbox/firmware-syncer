@@ -44,7 +44,9 @@ func New(configFile string, logLevel int) *Syncer {
 	if err != nil {
 		logger.Error(err.Error())
 	}
+
 	var provs []providers.Provider
+
 	for _, cfgProvider := range cfg.Providers {
 		switch cfgProvider.Vendor {
 		case "dell":
@@ -52,6 +54,7 @@ func New(configFile string, logLevel int) *Syncer {
 			if err != nil {
 				logger.Error("Failed to initialize Dell provider: " + err.Error())
 			}
+
 			provs = append(provs, dellProvider)
 		default:
 			logger.Error("Provider not supported: " + cfgProvider.Vendor)

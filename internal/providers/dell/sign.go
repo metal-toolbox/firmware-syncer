@@ -15,9 +15,6 @@ func (d *DellDUP) signDUPFile(ctx context.Context) error {
 			return err
 		}
 
-		// collect metrics on return
-		defer d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSign)
-
 		srcPath := path.Join(
 			"/firmware",
 			UpdateFilesPath(
@@ -37,10 +34,14 @@ func (d *DellDUP) signDUPFile(ctx context.Context) error {
 			d.signer,
 			d.logger,
 		)
+		// collect metrics from downloader
+		d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSign)
+
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

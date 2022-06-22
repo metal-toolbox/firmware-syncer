@@ -12,6 +12,7 @@ require (
 require (
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/metal-toolbox/ironlib v0.1.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/rclone/rclone v1.56.2
 	github.com/stretchr/testify v1.7.1
 )
@@ -38,7 +39,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/ncw/swift/v2 v2.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect

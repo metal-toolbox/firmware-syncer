@@ -22,7 +22,10 @@ var rootCmd = &cobra.Command{
 	Short: "Firmware syncer syncs firmware files from vendor repositories",
 	Run: func(cmd *cobra.Command, args []string) {
 		syncerApp := app.New(cfgFile, logLevel)
-		syncerApp.SyncFirmwares(cmd.Context(), dryRun)
+		err := syncerApp.SyncFirmwares(cmd.Context(), dryRun)
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 

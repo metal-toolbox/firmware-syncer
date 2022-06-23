@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/equinixmetal/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 
 	rcloneHttp "github.com/rclone/rclone/backend/http"

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/equinixmetal/firmware-syncer/cmd"
+import "github.com/metal-toolbox/firmware-syncer/cmd"
 
 func main() {
 	cmd.Execute()

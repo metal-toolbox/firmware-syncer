@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/equinixmetal/firmware-syncer/internal/config"
-	"github.com/equinixmetal/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 	ironlibm "github.com/metal-toolbox/ironlib/model"
 
 	"github.com/pkg/errors"

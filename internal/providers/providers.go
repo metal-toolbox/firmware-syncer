@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/equinixmetal/firmware-syncer/internal/metrics"
+	"github.com/metal-toolbox/firmware-syncer/internal/metrics"
 )
 
 const (

@@ -1,4 +1,4 @@
-module github.com/equinixmetal/firmware-syncer
+module github.com/metal-toolbox/firmware-syncer
 
 go 1.17
 

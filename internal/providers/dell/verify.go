@@ -3,7 +3,7 @@ package dell
 import (
 	"context"
 
-	"github.com/equinixmetal/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 
 	"github.com/sirupsen/logrus"
 )

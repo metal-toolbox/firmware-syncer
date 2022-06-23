@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/equinixmetal/firmware-syncer/internal/app"
+	"github.com/metal-toolbox/firmware-syncer/internal/app"
 	"github.com/spf13/cobra"
 )
 

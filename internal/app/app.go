@@ -6,9 +6,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/equinixmetal/firmware-syncer/internal/config"
-	"github.com/equinixmetal/firmware-syncer/internal/providers"
-	"github.com/equinixmetal/firmware-syncer/internal/providers/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers/dell"
 )
 
 var (

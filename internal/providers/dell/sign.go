@@ -4,7 +4,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/equinixmetal/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 )
 
 // signDUP downloads the DUP file from the filestore, checksums, signs and uploads the checksum and signature files

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/equinixmetal/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 

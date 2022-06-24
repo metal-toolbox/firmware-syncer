@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
@@ -25,7 +26,7 @@ type Syncer struct {
 }
 
 // New returns a Syncer object configured with Providers
-func New(configFile string, logLevel int) *Syncer {
+func New(configFile string, logLevel int) (*Syncer, error) {
 	// Setup logger
 	var logger = logrus.New()
 	logger.Out = os.Stdout
@@ -43,6 +44,7 @@ func New(configFile string, logLevel int) *Syncer {
 	cfg, err := config.LoadSyncerConfig(configFile)
 	if err != nil {
 		logger.Error(err.Error())
+		return nil, err
 	}
 
 	var provs []providers.Provider
@@ -50,14 +52,18 @@ func New(configFile string, logLevel int) *Syncer {
 	for _, cfgProvider := range cfg.Providers {
 		switch cfgProvider.Vendor {
 		case "dell":
-			dup, err := dell.NewDUP(context.TODO(), cfgProvider, logger)
+			var dup providers.Provider
+
+			dup, err = dell.NewDUP(context.TODO(), cfgProvider, logger)
 			if err != nil {
 				logger.Error("Failed to initialize Dell provider: " + err.Error())
+				return nil, err
 			}
 
 			provs = append(provs, dup)
 		default:
 			logger.Error("Provider not supported: " + cfgProvider.Vendor)
+			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgProvider.Vendor)
 		}
 	}
 
@@ -65,7 +71,7 @@ func New(configFile string, logLevel int) *Syncer {
 		config:    cfg,
 		logger:    logger,
 		providers: provs,
-	}
+	}, nil
 }
 
 // SyncFirmwares syncs all firmware files from the configured providers

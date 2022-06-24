@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrProviderAttributes = errors.New("provider config missing required attribute(s)")
-	ErrNoFileChecksum     = errors.New("file upstreamURL declared with no checksum (Provider.UtilityChecksum)")
+	ErrProviderAttributes   = errors.New("provider config missing required attribute(s)")
+	ErrNoFileChecksum       = errors.New("file upstreamURL declared with no checksum (Provider.UtilityChecksum)")
+	ErrProviderNotSupported = errors.New("provider not suppported")
 )
 
 type Syncer struct {

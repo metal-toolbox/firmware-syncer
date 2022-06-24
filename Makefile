@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 ## Go test
 test:
 		CGO_ENABLED=0 go test  -covermode=atomic ./...

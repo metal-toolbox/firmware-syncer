@@ -71,13 +71,18 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Lo
 			firmwares = append(firmwares, fw)
 		}
 	}
+	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
+	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgProvider.RepositoryURL)
+	if err != nil {
+		return nil, err
+	}
 	// initialize config.Filestore for the provider
 	filestoreCfg := config.Filestore{
 		Kind:     "s3",
 		LocalDir: "",
 		S3: &config.S3Bucket{
-			Endpoint:  os.Getenv("S3_ENDPOINT"),
-			Bucket:    os.Getenv("S3_BUCKET"),
+			Endpoint:  s3Endpoint,
+			Bucket:    s3Bucket,
 			AccessKey: os.Getenv("S3_ACCESS_KEY"),
 			SecretKey: os.Getenv("S3_SECRET_KEY"),
 		},

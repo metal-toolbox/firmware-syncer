@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -72,4 +74,15 @@ func LoadSyncerConfig(configFile string) (*Syncer, error) {
 	}
 
 	return config, nil
+}
+
+func ParseRepositoryURL(repositoryURL string) (endpoint, bucket string, err error) {
+	u, err := url.Parse(repositoryURL)
+	if err != nil {
+		return "", "", err
+	}
+
+	bucket = strings.TrimLeft(u.Path, "/")
+
+	return u.Host, bucket, nil
 }

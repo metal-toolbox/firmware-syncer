@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers"
-	ironlibm "github.com/metal-toolbox/ironlib/model"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -146,7 +146,7 @@ func initDownloaderDUP(ctx context.Context, srcURL string, filestoreCfg *config.
 func UpdateFilesPath(deviceVendor, deviceModel, slug, filename string) string {
 	var p string
 	// Update configuration for dells where a filename isn't specified indicates the updates are an entire repository
-	if deviceVendor == ironlibm.VendorDell && filename == "" {
+	if deviceVendor == common.VendorDell && filename == "" {
 		p = "/" + deviceVendor + "/"
 		return p
 	}

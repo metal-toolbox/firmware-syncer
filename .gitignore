@@ -1,0 +1,5 @@
+firmware-syncer
+firmware-syncer_checksum.txt
+vendor/*
+syncer.pub
+syncer.sec

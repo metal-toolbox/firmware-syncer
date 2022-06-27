@@ -6,6 +6,21 @@ This service is responsible for downloading firmware files from vendor repositor
 
 ![Syncer](docs/syncer.svg)
 
+## Usage
+
+```
+./firmware-syncer --config-file example-config.yml
+```
+
+Besides the configuration file, `firmware-syncer` requires the following environment variables set:
+`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `SYNCER_PUBLIC_KEY_FILE`, `SYNCER_PRIVATE_KEY_FILE`
+
+To create the pub/priv key pair, use `gosignify`:
+
+```
+gosignify -G -n -p syncer.pub -s syncer.sec
+```
+
 
 ## Development
 

@@ -2,16 +2,15 @@
 
 ## Go test
 test:
-		CGO_ENABLED=0 go test  -covermode=atomic ./...
+	CGO_ENABLED=0 go test  -covermode=atomic ./...
 
 ## golangci-lint
 lint:
-		golangci-lint run --config .golangci.yml --timeout 300s
+	golangci-lint run --config .golangci.yml --timeout 300s
 
 ## Go build
 build:
-		go build -o firmware-syncer \
-		-mod vendor
+	go mod tidy && go mod vendor && go build -o firmware-syncer -mod vendor
 	sha256sum firmware-syncer > firmware-syncer_checksum.txt
 
 

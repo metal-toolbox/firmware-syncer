@@ -10,8 +10,8 @@ require (
 )
 
 require (
+	github.com/bmc-toolbox/common v0.0.0-20220616154430-b5d9d9b70a69
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
-	github.com/metal-toolbox/ironlib v0.1.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rclone/rclone v1.56.2
 	github.com/stretchr/testify v1.7.1

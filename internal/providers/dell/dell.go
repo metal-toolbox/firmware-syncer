@@ -126,8 +126,9 @@ func initDownloaderDUP(ctx context.Context, srcURL string, filestoreCfg *config.
 		return nil, err
 	}
 
-	// upstream URL parent
-	urlPathDir := filepath.Dir(urlPath)
+	// upstream URL path
+	// Add back the trailing slash removed by filepath.Dir() otherwise this makes rclone assume the path is a file instead of a directory
+	urlPathDir := filepath.Dir(urlPath) + "/"
 	// srcURLPart includes the scheme + host + url path of the srcURL (excluding the base name)
 	srcURLPart := hostPart + urlPathDir
 

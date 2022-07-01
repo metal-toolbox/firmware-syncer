@@ -31,7 +31,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 		{
 			"https://foo/bar/baz.bin",
 			fsConfig,
-			"https://foo/bar",
+			"https://foo/bar/",
 			"",
 			nil,
 			"DUP downloader initialization",

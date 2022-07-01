@@ -440,7 +440,7 @@ func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 
 	fs, err := rcloneHttp.NewFs(ctx, httpURL, pathPart, opts)
 
-	if err != nil && err != rcloneFs.ErrorIsFile {
+	if err != nil && !errors.Is(err, rcloneFs.ErrorIsFile) {
 		return nil, errors.Wrap(ErrInitHTTPDownloader, err.Error())
 	}
 

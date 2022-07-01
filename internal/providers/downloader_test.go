@@ -182,7 +182,7 @@ func Test_initSource(t *testing.T) {
 		{
 			"http://foo/baz.bin",
 			nil,
-			"http://foo/baz.bin/",
+			"http://foo/baz.bin",
 			"init source rclone fs",
 		},
 	}
@@ -196,7 +196,7 @@ func Test_initSource(t *testing.T) {
 			}
 			assert.Nil(t, err)
 			if tc.want != "" {
-				assert.Equal(t, tc.want, f.String())
+				assert.Equal(t, tc.want, f.Name())
 			}
 		})
 	}

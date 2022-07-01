@@ -426,7 +426,7 @@ func FindFileObjectByName(ctx context.Context, fs rcloneFs.Fs, name string) (rcl
 //          this can be a http index or a URL endpoint from which files are to be downloaded.
 func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 	// parse the URL into host and path parts, as expected by the rclone fs lib
-	hostPart, urlPart, err := SplitURLPath(httpURL)
+	hostPart, pathPart, err := SplitURLPath(httpURL)
 	if err != nil {
 		return nil, err
 	}
@@ -438,8 +438,9 @@ func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 		"url":     hostPart,
 	}
 
-	fs, err := rcloneHttp.NewFs(ctx, httpURL, urlPart, opts)
-	if err != nil {
+	fs, err := rcloneHttp.NewFs(ctx, httpURL, pathPart, opts)
+
+	if err != nil && err != rcloneFs.ErrorIsFile {
 		return nil, errors.Wrap(ErrInitHTTPDownloader, err.Error())
 	}
 

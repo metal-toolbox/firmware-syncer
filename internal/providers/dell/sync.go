@@ -68,7 +68,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 
 		d.logger.WithFields(
 			logrus.Fields{
-				"src": downloader.SrcURL() + fw.Filename,
+				"src": downloader.SrcURL(),
 				"dst": downloader.FilestoreURL() + downloadPath,
 			},
 		).Trace("sync DUP")

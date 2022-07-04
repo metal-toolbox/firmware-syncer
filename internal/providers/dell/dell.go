@@ -3,7 +3,6 @@ package dell
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/bmc-toolbox/common"
@@ -120,24 +119,12 @@ func (d *DUP) Stats() *providers.Metrics {
 // Dell updates installed as DUPs (updateConfig.Utility)
 // these have a single downloader to retrieve the file from the UpstreamURL
 func initDownloaderDUP(ctx context.Context, srcURL string, filestoreCfg *config.Filestore) (*providers.Downloader, error) {
-	// Split out host and url part so the downloader can be invoked to copy with the source filename
-	hostPart, urlPath, err := providers.SplitURLPath(srcURL)
-	if err != nil {
-		return nil, err
-	}
-
-	// upstream URL path
-	// Add back the trailing slash removed by filepath.Dir() otherwise this makes rclone assume the path is a file instead of a directory
-	urlPathDir := filepath.Dir(urlPath) + "/"
-	// srcURLPart includes the scheme + host + url path of the srcURL (excluding the base name)
-	srcURLPart := hostPart + urlPathDir
-
 	storeCfg, err := providers.FilestoreConfig("/", filestoreCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return providers.NewDownloader(ctx, srcURLPart, storeCfg)
+	return providers.NewDownloader(ctx, srcURL, storeCfg)
 }
 
 // UpdateFilesPath returns the directory, file path destination for the update

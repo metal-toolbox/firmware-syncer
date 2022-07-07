@@ -38,7 +38,7 @@ jobs:
       run: make test
 
     - name: Build firmware-syncer executable
-      run: make build
+      run: make build-linux
 
     - uses: actions/upload-artifact@v3
       with:

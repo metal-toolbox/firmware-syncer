@@ -8,9 +8,18 @@ test:
 lint:
 	golangci-lint run --config .golangci.yml --timeout 300s
 
-## Go build
-build:
-	go mod tidy && go mod vendor && go build -o firmware-syncer -mod vendor
+## Go mod
+go-mod:
+	go mod tidy && go mod vendor
+
+## Build osx bin
+build-osx: go-mod
+	GOOS=darwin GOARCH=amd64 go build -o firmware-syncer -mod vendor
+	sha256sum firmware-syncer > firmware-syncer_checksum.txt
+
+## Build linux bin
+build-linux: go-mod
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o firmware-syncer -mod vendor
 	sha256sum firmware-syncer > firmware-syncer_checksum.txt
 
 

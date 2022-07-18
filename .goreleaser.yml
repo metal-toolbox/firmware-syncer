@@ -51,6 +51,7 @@ dockers:
   -
     image_templates:
       - "ghcr.io/metal-toolbox/{{.ProjectName}}:{{ .Tag }}"
+      - "ghcr.io/metal-toolbox/{{.ProjectName}}:latest"
     dockerfile: Dockerfile
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"

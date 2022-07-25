@@ -104,6 +104,7 @@ func Test_FilestoreConfig(t *testing.T) {
 				Kind:   "s3",
 				TmpDir: "/tmp",
 				S3: &config.S3Bucket{
+					Region:    "region",
 					SecretKey: "foo",
 					AccessKey: "bar",
 					Endpoint:  "endpoint",
@@ -114,6 +115,7 @@ func Test_FilestoreConfig(t *testing.T) {
 				URL: "s3://endpoint/stuff/",
 				Tmp: "/tmp",
 				S3: &S3Config{
+					Region:    "region",
 					SecretKey: "foo",
 					AccessKey: "bar",
 					Endpoint:  "endpoint",

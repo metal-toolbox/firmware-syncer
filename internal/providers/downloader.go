@@ -89,6 +89,7 @@ type StoreConfig struct {
 
 // S3Config for the downloader
 type S3Config struct {
+	Region    string
 	Bucket    string
 	Root      string
 	AccessKey string
@@ -147,11 +148,13 @@ func FilestoreConfig(rootDir string, cfg *config.Filestore) (*StoreConfig, error
 			cfg.S3.Bucket == "" ||
 			cfg.S3.SecretKey == "" ||
 			cfg.S3.AccessKey == "" ||
-			cfg.S3.Endpoint == "" {
+			cfg.S3.Endpoint == "" ||
+			cfg.S3.Region == "" {
 			return nil, errors.Wrap(ErrStoreConfig, "s3 configuration nil or undefined")
 		}
 
 		storeCfg.S3 = &S3Config{
+			Region:    cfg.S3.Region,
 			Bucket:    cfg.S3.Bucket,
 			SecretKey: cfg.S3.SecretKey,
 			AccessKey: cfg.S3.AccessKey,
@@ -509,7 +512,7 @@ func initS3Fs(ctx context.Context, cfg *S3Config) (rcloneFs.Fs, error) {
 	opts := rcloneConfigmap.Simple{
 		"type":                 "s3",
 		"provider":             "AWS",
-		"region":               "us-east-1",
+		"region":               cfg.Region,
 		"access_key_id":        cfg.AccessKey,
 		"secret_access_key":    cfg.SecretKey,
 		"endpoint":             cfg.Endpoint,

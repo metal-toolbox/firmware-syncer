@@ -21,9 +21,10 @@ type Syncer struct {
 }
 
 type Provider struct {
-	Vendor        string `yaml:"vendor"`
-	RepositoryURL string `yaml:"repositoryURL"`
-	Firmwares     []*Firmware
+	Vendor           string `yaml:"vendor"`
+	RepositoryURL    string `yaml:"repositoryURL"`
+	RepositoryRegion string `yaml:"repositoryRegion"`
+	Firmwares        []*Firmware
 }
 
 type Firmware struct {
@@ -54,6 +55,7 @@ type Filestore struct {
 
 // S3Bucket holds configuration parameters to connect to an S3 compatible bucket
 type S3Bucket struct {
+	Region    string `mapstructure:"region"`   // AWS region location for the s3 bucket
 	Endpoint  string `mapstructure:"endpoint"` // s3.foobar.com
 	Bucket    string `mapstructure:"bucket"`   // fup-data
 	AccessKey string `mapstructure:"access_key"`

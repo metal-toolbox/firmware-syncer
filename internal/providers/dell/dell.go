@@ -80,6 +80,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Lo
 		Kind:     "s3",
 		LocalDir: "",
 		S3: &config.S3Bucket{
+			Region:    cfgProvider.RepositoryRegion,
 			Endpoint:  s3Endpoint,
 			Bucket:    s3Bucket,
 			AccessKey: os.Getenv("S3_ACCESS_KEY"),

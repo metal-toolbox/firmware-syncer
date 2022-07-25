@@ -13,6 +13,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 		Kind:   "s3",
 		TmpDir: "/tmp",
 		S3: &config.S3Bucket{
+			Region:    "region",
 			SecretKey: "foo",
 			AccessKey: "bar",
 			Endpoint:  "endpoint",

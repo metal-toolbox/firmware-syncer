@@ -65,11 +65,12 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 				fw.Filename,
 			),
 		)
+		dstURL := downloader.FilestoreURL() + downloadPath
 
 		d.logger.WithFields(
 			logrus.Fields{
 				"src": downloader.SrcURL(),
-				"dst": downloader.FilestoreURL() + downloadPath,
+				"dst": dstURL,
 			},
 		).Trace("sync DUP")
 
@@ -77,6 +78,11 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 		// collect metrics from downloader
 		d.metrics.FromDownloader(downloader, d.config.Vendor, providers.ActionSync)
 
+		if err != nil {
+			return err
+		}
+
+		err = d.inventory.Publish(d.config.Vendor, fw, dstURL)
 		if err != nil {
 			return err
 		}

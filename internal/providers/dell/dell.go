@@ -7,6 +7,7 @@ import (
 
 	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 
 	"github.com/pkg/errors"
@@ -44,10 +45,11 @@ type DUP struct {
 	signer       *providers.Signer
 	logger       *logrus.Logger
 	metrics      *providers.Metrics
+	inventory    *inventory.ServerService
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Logger) (providers.Provider, error) {
+func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL string, logger *logrus.Logger) (providers.Provider, error) {
 	// RepositoryURL required
 	if cfgProvider.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -97,6 +99,12 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Lo
 		return nil, err
 	}
 
+	// init inventory
+	i, err := inventory.New(inventoryURL, logger)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DUP{
 		// TODO: fix force parameter to be configurable
 		force:        true,
@@ -106,6 +114,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, logger *logrus.Lo
 		signer:       s,
 		logger:       logger,
 		metrics:      providers.NewMetrics(),
+		inventory:    i,
 	}, nil
 }
 

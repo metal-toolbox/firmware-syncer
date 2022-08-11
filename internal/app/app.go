@@ -54,7 +54,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case "dell":
 			var dup providers.Provider
 
-			dup, err = dell.NewDUP(context.TODO(), cfgProvider, logger)
+			dup, err = dell.NewDUP(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
 			if err != nil {
 				logger.Error("Failed to initialize Dell provider: " + err.Error())
 				return nil, err

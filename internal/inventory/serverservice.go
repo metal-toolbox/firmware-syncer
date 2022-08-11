@@ -3,18 +3,21 @@ package inventory
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
-	"github.com/sanity-io/litter"
 	"github.com/sirupsen/logrus"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-var ErrServerServiceMultipleFirmware = errors.New("multiple component firmware version found")
+var (
+	ErrServerServiceDuplicateFirmware = errors.New("duplicate firmware found")
+	ErrServerServiceQuery             = errors.New("server service query failed")
+)
 
 type ServerService struct {
 	client *serverservice.Client
@@ -25,6 +28,10 @@ func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
 	retryableClient := retryablehttp.NewClient()
 
 	authToken := os.Getenv("SERVERSERVICE_AUTH_TOKEN")
+
+	if authToken == "" {
+		return nil, errors.New("missing server service auth token")
+	}
 
 	c, err := serverservice.NewClientWithToken(authToken, inventoryURL, retryableClient.StandardClient())
 	if err != nil {
@@ -60,7 +67,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 
 	firmwares, _, err := s.client.ListServerComponentFirmware(ctx, &params)
 	if err != nil {
-		return err
+		return errors.Wrap(ErrServerServiceQuery, "ListServerComponentFirmware: "+err.Error())
 	}
 
 	if len(firmwares) == 0 {
@@ -68,7 +75,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 
 		u, _, err = s.client.CreateServerComponentFirmware(ctx, cfv)
 		if err != nil {
-			return err
+			return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
 		}
 
 		s.logger.WithFields(
@@ -83,12 +90,27 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 	if len(firmwares) == 1 {
 		s.logger.WithFields(
 			logrus.Fields{
-				"uuid": &firmwares[0].UUID,
+				"uuid":    &firmwares[0].UUID,
+				"vendor":  vendor,
+				"model":   firmware.Model,
+				"version": firmware.Version,
 			},
 		).Trace("firmware already published")
 
 		return nil
 	}
 
-	return errors.Wrap(ErrServerServiceMultipleFirmware, litter.Sdump(firmwares))
+	// Assumption at this point is that there are duplicated firmwares returned by the ListServerComponentFirmware query.
+	uuids := make([]string, len(firmwares))
+	for i := range firmwares {
+		uuids[i] = firmwares[i].UUID.String()
+	}
+
+	s.logger.WithFields(
+		logrus.Fields{
+			"uuids": strings.Join(uuids, ","),
+		},
+	).Trace("duplicate firmware IDs")
+
+	return errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
 }

@@ -16,7 +16,6 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rclone/rclone v1.58.1
-	github.com/sanity-io/litter v1.5.5
 	github.com/stretchr/testify v1.8.0
 	go.hollow.sh/serverservice v0.14.1
 )

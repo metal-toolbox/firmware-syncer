@@ -100,7 +100,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 	}
 
 	// init inventory
-	i, err := inventory.New(inventoryURL, logger)
+	i, err := inventory.New(ctx, inventoryURL, logger)
 	if err != nil {
 		return nil, err
 	}

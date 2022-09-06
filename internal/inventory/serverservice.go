@@ -2,14 +2,16 @@ package inventory
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strings"
 
+	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -24,16 +26,45 @@ type ServerService struct {
 	logger *logrus.Logger
 }
 
-func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
-	retryableClient := retryablehttp.NewClient()
+func New(ctx context.Context, inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
+	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
 
-	authToken := os.Getenv("SERVERSERVICE_AUTH_TOKEN")
-
-	if authToken == "" {
-		return nil, errors.New("missing server service auth token")
+	if clientSecret == "" {
+		return nil, errors.New("missing server service client secret")
 	}
 
-	c, err := serverservice.NewClientWithToken(authToken, inventoryURL, retryableClient.StandardClient())
+	clientID := os.Getenv("SERVERSERVICE_CLIENT_ID")
+
+	if clientID == "" {
+		return nil, errors.New("missing server service client id")
+	}
+
+	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
+
+	if oidcProviderEndpoint == "" {
+		return nil, errors.New("missing server service oidc provider endpoint")
+	}
+
+	provider, err := oidc.NewProvider(ctx, oidcProviderEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	audience := os.Getenv("SERVERSERVICE_AUDIENCE_ENDPOINT")
+
+	if audience == "" {
+		return nil, errors.New("missing server service audience URL")
+	}
+
+	oauthConfig := clientcredentials.Config{
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
+		TokenURL:       provider.Endpoint().TokenURL,
+		Scopes:         []string{"create:server", "read:server", "update:server"},
+		EndpointParams: url.Values{"audience": {audience}},
+	}
+
+	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}

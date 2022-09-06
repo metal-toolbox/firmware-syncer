@@ -341,7 +341,8 @@ func (c *Downloader) Sync(ctx context.Context) error {
 // DstFileExists checks if the given file exists in the destination
 //
 // note: the name parameter must be the full path name to the file including the file name
-//       e.g: "/foo/bar/lala.bin"
+//
+//	e.g: "/foo/bar/lala.bin"
 func (c *Downloader) FilestoreFileExists(ctx context.Context, name string) (bool, error) {
 	exists, err := fileExists(ctx, c.filestore, name)
 	if err != nil {
@@ -354,7 +355,8 @@ func (c *Downloader) FilestoreFileExists(ctx context.Context, name string) (bool
 // SrcFileExists checks if the given file exists in the source
 //
 // note: the name parameter must be the full path name to the file including the file name
-//       e.g: "/foo/bar/lala.bin"
+//
+//	e.g: "/foo/bar/lala.bin"
 func (c *Downloader) SrcFileExists(ctx context.Context, name string) (bool, error) {
 	exists, err := fileExists(ctx, c.src, name)
 	if err != nil {
@@ -426,7 +428,8 @@ func FindFileObjectByName(ctx context.Context, fs rcloneFs.Fs, name string) (rcl
 // the Fs is initialized based the urlHost, urlPath parameters
 //
 // httpURL: the http endpoint which is expected to be the root/top level directory from where files are to be copied from/to
-//          this can be a http index or a URL endpoint from which files are to be downloaded.
+//
+//	this can be a http index or a URL endpoint from which files are to be downloaded.
 func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 	// parse the URL into host and path parts, as expected by the rclone fs lib
 	hostPart, pathPart, err := SplitURLPath(httpURL)
@@ -482,7 +485,8 @@ func initLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 // initS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
 //
 // cfg.S3.Root: the directory mounted as the root/top level directory of the returned fs
-//          when dstPath is set to / the bucket top level directory would be the root
+//
+//	when dstPath is set to / the bucket top level directory would be the root
 func initS3Fs(ctx context.Context, cfg *S3Config) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil s3 config")

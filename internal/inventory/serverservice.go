@@ -26,7 +26,7 @@ type ServerService struct {
 	logger *logrus.Logger
 }
 
-func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
+func New(ctx context.Context, inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
 	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
 
 	if clientSecret == "" {
@@ -37,7 +37,6 @@ func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
 
 	if clientID == "" {
 		return nil, errors.New("missing server service client id")
-
 	}
 
 	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
@@ -65,7 +64,7 @@ func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
 		EndpointParams: url.Values{"audience": {audience}},
 	}
 
-	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(context.TODO()))
+	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}

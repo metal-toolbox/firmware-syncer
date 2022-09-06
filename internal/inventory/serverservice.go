@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
@@ -39,12 +40,29 @@ func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
 
 	}
 
+	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
+
+	if oidcProviderEndpoint == "" {
+		return nil, errors.New("missing server service oidc provider endpoint")
+	}
+
+	provider, err := oidc.NewProvider(ctx, oidcProviderEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	audience := os.Getenv("SERVERSERVICE_AUDIENCE_ENDPOINT")
+
+	if audience == "" {
+		return nil, errors.New("missing server service audience URL")
+	}
+
 	oauthConfig := clientcredentials.Config{
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
-		TokenURL:       "https://hydra.iam.equinixmetal.net/oauth2/token",
+		TokenURL:       provider.Endpoint().TokenURL,
 		Scopes:         []string{"create:server", "read:server", "update:server"},
-		EndpointParams: url.Values{"audience": {"https://hollow.equinixmetal.net"}},
+		EndpointParams: url.Values{"audience": {audience}},
 	}
 
 	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(context.TODO()))

@@ -2,14 +2,15 @@ package inventory
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -25,15 +26,28 @@ type ServerService struct {
 }
 
 func New(inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
-	retryableClient := retryablehttp.NewClient()
+	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
 
-	authToken := os.Getenv("SERVERSERVICE_AUTH_TOKEN")
-
-	if authToken == "" {
-		return nil, errors.New("missing server service auth token")
+	if clientSecret == "" {
+		return nil, errors.New("missing server service client secret")
 	}
 
-	c, err := serverservice.NewClientWithToken(authToken, inventoryURL, retryableClient.StandardClient())
+	clientID := os.Getenv("SERVERSERVICE_CLIENT_ID")
+
+	if clientID == "" {
+		return nil, errors.New("missing server service client id")
+
+	}
+
+	oauthConfig := clientcredentials.Config{
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
+		TokenURL:       "https://hydra.iam.equinixmetal.net/oauth2/token",
+		Scopes:         []string{"create:server", "read:server", "update:server"},
+		EndpointParams: url.Values{"audience": {"https://hollow.equinixmetal.net"}},
+	}
+
+	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(context.TODO()))
 	if err != nil {
 		return nil, err
 	}

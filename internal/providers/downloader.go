@@ -298,9 +298,9 @@ func (c *Downloader) CopyLocalTmpToFilestore(ctx context.Context, dstFilename, s
 	return nil
 }
 
-// CopyURLToLocalTmp copies files from the  to the local tmp directory
+// CopyURLToLocalTmp copies files from the srcURL to the local tmp directory
 func (c *Downloader) CopyURLToLocalTmp(ctx context.Context, tmpFilename, srcURL string) error {
-	_, err := rcloneOperations.CopyURL(ctx, c.tmp, tmpFilename, srcURL, false, false)
+	_, err := rcloneOperations.CopyURL(ctx, c.tmp, tmpFilename, srcURL, false, false, false)
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(ErrCopy, err.Error()+": "+srcURL)

@@ -14,7 +14,7 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/google/uuid v1.3.0
-	github.com/prometheus/client_golang v1.12.2
+	github.com/prometheus/client_golang v1.13.0
 	github.com/rclone/rclone v1.59.1
 	github.com/stretchr/testify v1.8.0
 	go.hollow.sh/serverservice v0.14.1
@@ -82,8 +82,8 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
-	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/prometheus/common v0.37.0 // indirect
+	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rfjakob/eme v1.1.2 // indirect
 	github.com/shirou/gopsutil/v3 v3.22.5 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
@@ -116,7 +116,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8 // indirect
 	google.golang.org/grpc v1.47.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

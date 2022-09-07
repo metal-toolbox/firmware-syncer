@@ -12,6 +12,7 @@ require (
 require (
 	github.com/bmc-toolbox/common v0.0.0-20220808122349-335517678873
 	github.com/coreos/go-oidc v2.2.1+incompatible
+	github.com/coreos/go-oidc/v3 v3.3.0
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.13.0
@@ -105,7 +106,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	gocloud.dev v0.26.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced // indirect
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect

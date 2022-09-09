@@ -56,11 +56,17 @@ func New(ctx context.Context, inventoryURL string, logger *logrus.Logger) (*Serv
 		return nil, errors.New("missing server service audience URL")
 	}
 
+	scopes := []string{
+		"create:server-component-firmwares",
+		"read:server-component-firmwares",
+		"update:server-component-firmwares",
+	}
+
 	oauthConfig := clientcredentials.Config{
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 		TokenURL:       provider.Endpoint().TokenURL,
-		Scopes:         []string{"create:server", "read:server", "update:server"},
+		Scopes:         scopes,
 		EndpointParams: url.Values{"audience": {audience}},
 	}
 

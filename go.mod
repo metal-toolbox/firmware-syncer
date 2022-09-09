@@ -19,7 +19,7 @@ require (
 	github.com/rclone/rclone v1.59.1
 	github.com/stretchr/testify v1.8.0
 	go.hollow.sh/serverservice v0.14.2
-	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
+	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 )
 
 require (

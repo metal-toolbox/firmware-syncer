@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rclone/rclone v1.59.1
 	github.com/stretchr/testify v1.8.0
-	go.hollow.sh/serverservice v0.14.2
+	go.hollow.sh/serverservice v0.14.3
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 )
 
@@ -30,7 +30,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.29 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/cockroachdb/cockroach-go/v2 v2.2.15 // indirect
+	github.com/cockroachdb/cockroach-go/v2 v2.2.16 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jzelinskie/whirlpool v0.0.0-20201016144138-0675e54bb004 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lib/pq v1.10.6 // indirect
+	github.com/lib/pq v1.10.7 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -77,7 +77,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/ncw/swift/v2 v2.0.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/xattr v0.4.7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
@@ -91,15 +91,15 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.12.0 // indirect
-	github.com/subosito/gotenv v1.4.0 // indirect
+	github.com/spf13/viper v1.13.0 // indirect
+	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/null/v8 v8.1.2 // indirect
 	github.com/volatiletech/randomize v0.0.1 // indirect
-	github.com/volatiletech/sqlboiler/v4 v4.12.0 // indirect
+	github.com/volatiletech/sqlboiler/v4 v4.13.0 // indirect
 	github.com/volatiletech/strmangle v0.0.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.hollow.sh/toolbox v0.3.0 // indirect
@@ -108,7 +108,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect

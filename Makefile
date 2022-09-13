@@ -10,7 +10,7 @@ lint:
 
 ## Go mod
 go-mod:
-	go mod tidy -compat=1.17 && go mod vendor
+	go mod tidy -compat=1.19 && go mod vendor
 
 ## Build osx bin
 build-osx: go-mod

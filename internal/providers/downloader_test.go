@@ -290,43 +290,50 @@ func Test_initLocalFs(t *testing.T) {
 
 func Test_initS3Fs(t *testing.T) {
 	cases := []struct {
-		cfg  *S3Config
+		cfg  *config.S3Bucket
+		root string
 		err  error
 		want string
 		name string
 	}{
 		{
 			nil,
+			"",
 			ErrFileStoreConfig,
 			"",
 			"s3 config nil",
 		},
 		{
-			&S3Config{},
+			&config.S3Bucket{},
+			"",
 			ErrRootDirUndefined,
 			"",
 			"root dir undefined",
 		},
 		{
-			&S3Config{Root: "/foobar"},
+			&config.S3Bucket{},
+			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&S3Config{Root: "/foobar", Endpoint: "s3.example.foo"},
+			&config.S3Bucket{Endpoint: "s3.example.foo"},
+			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&S3Config{Root: "/foobar", Endpoint: "s3.example.foo", AccessKey: "sekrit"},
+			&config.S3Bucket{Endpoint: "s3.example.foo", AccessKey: "sekrit"},
+			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&S3Config{Root: "/foobar", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
+			&config.S3Bucket{Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
+			"/foobar",
 			nil,
 			"S3 bucket foobar",
 			"",
@@ -335,7 +342,7 @@ func Test_initS3Fs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := initS3Fs(context.TODO(), tc.cfg)
+			f, err := initS3Fs(context.TODO(), tc.cfg, tc.root)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

@@ -82,19 +82,11 @@ type StoreConfig struct {
 	// Path to mount as the tmp directory when downloading files to sign and verify
 	Tmp string
 	// S3 configuration - required when URL points to an s3 bucket
-	S3 *S3Config
+	S3 *config.S3Bucket
 	// Local filesystem configuration - required when URL points to a local directory
 	Local *LocalFsConfig
-}
-
-// S3Config for the downloader
-type S3Config struct {
-	Region    string
-	Bucket    string
-	Root      string
-	AccessKey string
-	SecretKey string
-	Endpoint  string
+	// Path to root of the fs
+	Root string
 }
 
 // LocalFsConfig for the downloader
@@ -153,14 +145,8 @@ func FilestoreConfig(rootDir string, cfg *config.Filestore) (*StoreConfig, error
 			return nil, errors.Wrap(ErrStoreConfig, "s3 configuration nil or undefined")
 		}
 
-		storeCfg.S3 = &S3Config{
-			Region:    cfg.S3.Region,
-			Bucket:    cfg.S3.Bucket,
-			SecretKey: cfg.S3.SecretKey,
-			AccessKey: cfg.S3.AccessKey,
-			Endpoint:  cfg.S3.Endpoint,
-			Root:      rootDir,
-		}
+		storeCfg.S3 = cfg.S3
+		storeCfg.Root = rootDir
 
 		storeCfg.URL = cfg.S3.Endpoint + "/" + cfg.S3.Bucket + "/"
 
@@ -172,6 +158,7 @@ func FilestoreConfig(rootDir string, cfg *config.Filestore) (*StoreConfig, error
 	case KindLocal:
 		storeCfg.Local = &LocalFsConfig{Root: cfg.LocalDir}
 		storeCfg.URL = cfg.LocalDir
+		storeCfg.Root = rootDir
 
 		if !strings.HasPrefix(storeCfg.URL, "local://") {
 			storeCfg.URL = "local://" + storeCfg.URL
@@ -219,7 +206,7 @@ func initStore(ctx context.Context, cfg *StoreConfig) (rcloneFs.Fs, error) {
 	// init store configuration
 	switch {
 	case strings.HasPrefix(cfg.URL, "s3://"):
-		fs, err = initS3Fs(ctx, cfg.S3)
+		fs, err = initS3Fs(ctx, cfg.S3, cfg.Root)
 	case strings.HasPrefix(cfg.URL, "local://"):
 		fs, err = initLocalFs(ctx, cfg.Local)
 	default:
@@ -236,7 +223,7 @@ func (c *Downloader) FilestoreURL() string {
 
 func (c *Downloader) FilestoreRootDir() string {
 	if c.storeCfg.S3 != nil {
-		return c.storeCfg.S3.Root
+		return c.storeCfg.Root
 	}
 
 	if c.storeCfg.Local != nil {
@@ -484,16 +471,18 @@ func initLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 
 // initS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
 //
-// cfg.S3.Root: the directory mounted as the root/top level directory of the returned fs
-//
-//	when dstPath is set to / the bucket top level directory would be the root
-func initS3Fs(ctx context.Context, cfg *S3Config) (rcloneFs.Fs, error) {
+// root: the directory mounted as the root/top level directory of the returned fs
+func initS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil s3 config")
 	}
 
-	if cfg.Root == "" {
+	if root == "" {
 		return nil, errors.Wrap(ErrRootDirUndefined, "initS3Fs")
+	}
+
+	if cfg.Region == "" {
+		return nil, errors.Wrap(ErrInitS3Fs, "s3 region not defined")
 	}
 
 	if cfg.Endpoint == "" {
@@ -508,8 +497,8 @@ func initS3Fs(ctx context.Context, cfg *S3Config) (rcloneFs.Fs, error) {
 		return nil, errors.Wrap(ErrInitS3Fs, "s3 secret key not defined")
 	}
 
-	if !strings.HasPrefix(cfg.Root, "/") {
-		cfg.Root = "/" + cfg.Root
+	if !strings.HasPrefix(root, "/") {
+		root = "/" + root
 	}
 
 	// https://github.com/rclone/rclone/blob/master/backend/s3/s3.go#L126
@@ -532,7 +521,7 @@ func initS3Fs(ctx context.Context, cfg *S3Config) (rcloneFs.Fs, error) {
 		"no_check_bucket":      "true",
 	}
 
-	mount := cfg.Bucket + cfg.Root
+	mount := cfg.Bucket + root
 
 	fs, err := rcloneS3.NewFs(ctx, "s3://"+mount, mount, opts)
 	if err != nil {

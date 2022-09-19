@@ -10,14 +10,15 @@ import (
 
 func Test_NewDownloader(t *testing.T) {
 	sConfig := &StoreConfig{
-		URL: "s3://endpoint/stuff/",
-		Tmp: "/tmp",
-		S3: &S3Config{
+		URL:  "s3://endpoint/stuff/",
+		Tmp:  "/tmp",
+		Root: "/test",
+		S3: &config.S3Bucket{
 			SecretKey: "foo",
 			AccessKey: "bar",
 			Endpoint:  "endpoint",
 			Bucket:    "stuff",
-			Root:      "/test",
+			Region:    "region",
 		},
 	}
 	cases := []struct {
@@ -112,15 +113,15 @@ func Test_FilestoreConfig(t *testing.T) {
 				},
 			},
 			&StoreConfig{
-				URL: "s3://endpoint/stuff/",
-				Tmp: "/tmp",
-				S3: &S3Config{
+				URL:  "s3://endpoint/stuff/",
+				Tmp:  "/tmp",
+				Root: "/test",
+				S3: &config.S3Bucket{
 					Region:    "region",
 					SecretKey: "foo",
 					AccessKey: "bar",
 					Endpoint:  "endpoint",
 					Bucket:    "stuff",
-					Root:      "/test",
 				},
 			},
 			nil,
@@ -138,10 +139,11 @@ func Test_FilestoreConfig(t *testing.T) {
 				Local: &LocalFsConfig{
 					Root: "/foo/baz",
 				},
-				Tmp: "/tmp",
+				Tmp:  "/tmp",
+				Root: "/test",
 			},
 			nil,
-			"valid s3 configuration",
+			"valid local configuration",
 		},
 	}
 
@@ -218,7 +220,7 @@ func Test_initStore(t *testing.T) {
 			"FileStore config nil",
 		},
 		{
-			&StoreConfig{URL: "s3://bucket/foobar", S3: &S3Config{Root: "/foobar", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"}},
+			&StoreConfig{URL: "s3://bucket/foobar", Root: "/foobar", S3: &config.S3Bucket{Region: "region", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"}},
 			nil,
 			"S3 bucket foobar",
 			"init s3 filestore",
@@ -332,7 +334,7 @@ func Test_initS3Fs(t *testing.T) {
 			"s3 params undefined",
 		},
 		{
-			&config.S3Bucket{Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
+			&config.S3Bucket{Region: "region", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
 			"/foobar",
 			nil,
 			"S3 bucket foobar",

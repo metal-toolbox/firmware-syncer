@@ -17,7 +17,7 @@ func (d *DUP) signDUPFile(ctx context.Context) error {
 
 		srcPath := path.Join(
 			"/firmware",
-			UpdateFilesPath(
+			providers.UpdateFilesPath(
 				d.config.Vendor,
 				fw.Model,
 				fw.ComponentSlug,

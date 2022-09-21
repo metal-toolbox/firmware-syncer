@@ -58,7 +58,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 
 		downloadPath := path.Join(
 			"/firmware",
-			UpdateFilesPath(
+			providers.UpdateFilesPath(
 				d.config.Vendor,
 				fw.Model,
 				fw.ComponentSlug,

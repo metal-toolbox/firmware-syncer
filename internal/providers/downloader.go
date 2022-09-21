@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 
@@ -555,4 +556,26 @@ func SplitURLPath(httpURL string) (hostPart, pathPart string, err error) {
 	}
 
 	return hostPart, pathPart, nil
+}
+
+// UpdateFilesPath returns the directory, file path destination for the update
+// based on the device vendor, model, component slug attributes
+//
+// This filepath structure is used to store and retrieve firmware
+func UpdateFilesPath(deviceVendor, deviceModel, slug, filename string) string {
+	var p string
+	// Update configuration for dells where a filename isn't specified indicates the updates are an entire repository
+	if deviceVendor == common.VendorDell && filename == "" {
+		p = "/" + deviceVendor + "/"
+		return p
+	}
+
+	p = "/" + strings.Join([]string{
+		deviceVendor,
+		deviceModel,
+		slug,
+		filename,
+	}, "/")
+
+	return strings.Replace(p, "//", "/", -1)
 }

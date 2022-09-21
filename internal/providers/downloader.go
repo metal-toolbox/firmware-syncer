@@ -66,6 +66,14 @@ type Downloader struct {
 	storeCfg *StoreConfig
 }
 
+type S3Downloader struct {
+	src    rcloneFs.Fs
+	srcCfg *config.S3Bucket
+	dst    rcloneFs.Fs
+	dstCfg *config.S3Bucket
+	tmp    rcloneFs.Fs
+}
+
 // DownloaderStats includes fields for stats on file/object transfer for Downloader
 type DownloaderStats struct {
 	BytesTransferred   int64
@@ -93,6 +101,57 @@ type StoreConfig struct {
 // LocalFsConfig for the downloader
 type LocalFsConfig struct {
 	Root string
+}
+
+func NewS3Downloader(ctx context.Context, srcCfg, dstCfg *config.S3Bucket) (*S3Downloader, error) {
+	var err error
+
+	rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
+	rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
+
+	downloader := &S3Downloader{
+		srcCfg: srcCfg,
+		dstCfg: dstCfg,
+	}
+
+	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: "/tmp"})
+	if err != nil {
+		return nil, err
+	}
+
+	downloader.src, err = initS3Fs(ctx, srcCfg, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	downloader.dst, err = initS3Fs(ctx, dstCfg, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	return downloader, nil
+}
+
+// CopyFile wraps rclone CopyFile to copy srcFilename to dstFilename
+func (s *S3Downloader) CopyFile(ctx context.Context, dstFilename, srcFilename string) error {
+	err := rcloneOperations.CopyFile(ctx, s.dst, s.src, dstFilename, srcFilename)
+	if err != nil {
+		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
+			return errors.Wrap(ErrCopy, err.Error()+" :"+srcFilename)
+		}
+
+		return errors.Wrap(ErrCopy, err.Error())
+	}
+
+	return nil
+}
+
+func (s *S3Downloader) SrcBucket() string {
+	return s.srcCfg.Bucket
+}
+
+func (s *S3Downloader) DstBucket() string {
+	return s.dstCfg.Bucket
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given StoreConfig

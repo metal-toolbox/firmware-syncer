@@ -84,7 +84,7 @@ func ParseRepositoryURL(repositoryURL string) (endpoint, bucket string, err erro
 		return "", "", err
 	}
 
-	bucket = strings.TrimLeft(u.Path, "/")
+	bucket = strings.Trim(u.Path, "/")
 
 	return u.Host, bucket, nil
 }

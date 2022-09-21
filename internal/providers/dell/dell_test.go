@@ -53,7 +53,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 				assert.Equal(t, tc.wantSrcURL, got.SrcURL())
 			}
 
-			if tc.wantSrcURL != "" {
+			if tc.wantDstURL != "" {
 				assert.Equal(t, tc.wantDstURL, got.DstURL())
 			}
 		})

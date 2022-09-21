@@ -9,6 +9,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers/asrockrack"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers/dell"
 )
 
@@ -61,6 +62,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			provs = append(provs, dup)
+		case "asrockrack":
+			var asrr providers.Provider
+
+			asrr, err = asrockrack.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
+			if err != nil {
+				logger.Error("Failed to initialize ASRockRack provider:" + err.Error())
+				return nil, err
+			}
+
+			provs = append(provs, asrr)
 		default:
 			logger.Error("Provider not supported: " + cfgProvider.Vendor)
 			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgProvider.Vendor)

@@ -47,14 +47,12 @@ func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string,
 			firmwares = append(firmwares, fw)
 		}
 	}
-	// TODO: Set this config somewhere else
-	s3SrcEndpoint := "s3.amazonaws.com"
-	s3SrcBucket := ""
-	s3SrcRegion := "us-east-2"
+	// TODO: For now set this configuration from env vars but ideally this should come from
+	// somewhere else. Maybe a per provider config?
 	srcS3Config := &config.S3Bucket{
-		Region:    s3SrcRegion,
-		Endpoint:  s3SrcEndpoint,
-		Bucket:    s3SrcBucket,
+		Region:    os.Getenv("ASRR_S3_REGION"),
+		Endpoint:  os.Getenv("ASRR_S3_ENDPOINT"),
+		Bucket:    os.Getenv("ASRR_S3_BUCKET"),
 		AccessKey: os.Getenv("ASRR_S3_ACCESS_KEY"),
 		SecretKey: os.Getenv("ASRR_S3_SECRET_KEY"),
 	}

@@ -115,7 +115,7 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
 	case logrus.TraceLevel:
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
-		rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
+		_ = rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
 	}
 
 	downloader := &S3Downloader{

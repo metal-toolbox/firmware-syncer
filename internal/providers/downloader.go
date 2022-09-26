@@ -3,6 +3,8 @@ package providers
 import (
 	"context"
 	"net/url"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -67,6 +69,7 @@ type Downloader struct {
 }
 
 type S3Downloader struct {
+	vendor string
 	src    rcloneFs.Fs
 	srcCfg *config.S3Bucket
 	dst    rcloneFs.Fs
@@ -103,13 +106,15 @@ type LocalFsConfig struct {
 	Root string
 }
 
-func NewS3Downloader(ctx context.Context, srcCfg, dstCfg *config.S3Bucket) (*S3Downloader, error) {
+func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket) (*S3Downloader, error) {
 	var err error
 
+	// TODO: used for debugging rclone requests
 	rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
 	rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
 
 	downloader := &S3Downloader{
+		vendor: vendor,
 		srcCfg: srcCfg,
 		dstCfg: dstCfg,
 	}
@@ -133,11 +138,18 @@ func NewS3Downloader(ctx context.Context, srcCfg, dstCfg *config.S3Bucket) (*S3D
 }
 
 // CopyFile wraps rclone CopyFile to copy srcFilename to dstFilename
-func (s *S3Downloader) CopyFile(ctx context.Context, dstFilename, srcFilename string) error {
-	err := rcloneOperations.CopyFile(ctx, s.dst, s.src, dstFilename, srcFilename)
+func (s *S3Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
+	var err error
+
+	err = s.VerifyFile(ctx, fw)
+	if err != nil {
+		return err
+	}
+
+	err = rcloneOperations.CopyFile(ctx, s.dst, s.src, s.DstPath(fw), s.SrcPath(fw))
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
-			return errors.Wrap(ErrCopy, err.Error()+" :"+srcFilename)
+			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
 		}
 
 		return errors.Wrap(ErrCopy, err.Error())
@@ -152,6 +164,48 @@ func (s *S3Downloader) SrcBucket() string {
 
 func (s *S3Downloader) DstBucket() string {
 	return s.dstCfg.Bucket
+}
+
+func (s *S3Downloader) SrcPath(fw *config.Firmware) string {
+	u, _ := url.Parse(fw.UpstreamURL)
+	return u.Path
+}
+
+func (s *S3Downloader) DstPath(fw *config.Firmware) string {
+	return path.Join(
+		"/firmware",
+		UpdateFilesPath(
+			s.vendor, fw.Model, fw.ComponentSlug, fw.Filename))
+}
+
+func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error {
+	// create local tmp directory
+	tmpDir, err := os.MkdirTemp(s.tmp.Root(), "verify-")
+	if err != nil {
+		return errors.Wrap(ErrRemoteVerifyFail, err.Error())
+	}
+
+	defer os.RemoveAll(tmpDir)
+
+	dstPath := path.Join(path.Base(tmpDir), fw.Filename)
+
+	err = rcloneOperations.CopyFile(ctx, s.tmp, s.src, dstPath, s.SrcPath(fw))
+	if err != nil {
+		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
+			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
+		}
+
+		return errors.Wrap(ErrCopy, err.Error())
+	}
+
+	tmpFilename := path.Join(s.tmp.Root(), dstPath)
+
+	err = SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given StoreConfig

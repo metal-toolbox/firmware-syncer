@@ -2,9 +2,7 @@ package asrockrack
 
 import (
 	"context"
-	"net/url"
 	"os"
-	"path"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
@@ -92,56 +90,45 @@ func (a *ASRockRack) Stats() *providers.Metrics {
 	return a.metrics
 }
 
-func initDownloader(ctx context.Context, srcCfg, dstCfg *config.S3Bucket) (*providers.S3Downloader, error) {
-	return providers.NewS3Downloader(ctx, srcCfg, dstCfg)
+func initDownloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket) (*providers.S3Downloader, error) {
+	return providers.NewS3Downloader(ctx, vendor, srcCfg, dstCfg)
 }
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := initDownloader(ctx, a.srcCfg, a.dstCfg)
+		downloader, err := initDownloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg)
 		if err != nil {
 			return err
 		}
 
-		u, _ := url.Parse(fw.UpstreamURL)
-		srcPath := u.Path
+		dstPath := downloader.DstPath(fw)
 
-		dstPath := path.Join(
-			"/firmware",
-			providers.UpdateFilesPath(
-				a.config.Vendor,
-				fw.Model,
-				fw.ComponentSlug,
-				fw.Filename,
-			),
-		)
+		dstURL := "s3://" + downloader.DstBucket() + dstPath
 
 		a.logger.WithFields(
 			logrus.Fields{
 				"src": fw.UpstreamURL,
-				"dst": "s3://" + downloader.DstBucket() + dstPath,
+				"dst": dstURL,
 			},
 		).Trace("sync ASRockRack")
 
-		err = downloader.CopyFile(ctx, dstPath, srcPath)
+		err = downloader.CopyFile(ctx, fw)
 		// collect metrics from downloader
-		//a.metrics.FromDownloader(downloader, a.config.Vendor, providers.ActionSync)
+		// a.metrics.FromDownloader(downloader, a.config.Vendor, providers.ActionSync)
 
 		if err != nil {
 			return err
 		}
 
-		//err = a.inventory.Publish(a.config.Vendor, fw, dstURL)
-		//if err != nil {
-		//	return err
-		//}
+		err = a.inventory.Publish(a.config.Vendor, fw, dstURL)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// Verify validates files are in sync, checksummed and accessible from the RepositoryURL endpoint
-// returns nil if verify was successful
 func (a *ASRockRack) Verify(ctx context.Context) error {
 	return nil
 }

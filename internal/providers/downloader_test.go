@@ -6,6 +6,8 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Test_NewDownloader(t *testing.T) {
@@ -65,6 +67,63 @@ func Test_NewDownloader(t *testing.T) {
 
 			if tc.cfg != nil {
 				assert.Equal(t, tc.cfg, got.storeCfg)
+			}
+		})
+	}
+}
+
+func Test_S3Downloader(t *testing.T) {
+	vendor := "asrockrack"
+	logLevel := logrus.InfoLevel
+	srcConfig := &config.S3Bucket{
+		Region:    "region",
+		SecretKey: "foo",
+		AccessKey: "bar",
+		Endpoint:  "endpoint",
+		Bucket:    "src-bucket",
+	}
+	dstConfig := &config.S3Bucket{
+		Region:    "region",
+		SecretKey: "foo",
+		AccessKey: "bar",
+		Endpoint:  "endpoint",
+		Bucket:    "dst-bucket",
+	}
+
+	cases := []struct {
+		name          string
+		srcCfg        *config.S3Bucket
+		dstCfg        *config.S3Bucket
+		wantSrcBucket string
+		wantDstBucket string
+		err           error
+	}{
+		{
+			"S3 downloader initialization",
+			srcConfig,
+			dstConfig,
+			"src-bucket",
+			"dst-bucket",
+			nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := NewS3Downloader(context.TODO(), vendor, tc.srcCfg, tc.dstCfg, logLevel)
+			if tc.err != nil {
+				assert.ErrorIs(t, err, tc.err)
+				return
+			}
+
+			assert.Nil(t, err)
+
+			if tc.wantSrcBucket != "" {
+				assert.Equal(t, tc.wantSrcBucket, got.SrcBucket())
+			}
+
+			if tc.wantDstBucket != "" {
+				assert.Equal(t, tc.wantDstBucket, got.DstBucket())
 			}
 		})
 	}

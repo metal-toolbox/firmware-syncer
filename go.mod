@@ -12,7 +12,6 @@ require (
 require (
 	github.com/bmc-toolbox/common v0.0.0-20220808122349-335517678873
 	github.com/coreos/go-oidc v2.2.1+incompatible
-	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.13.0
@@ -24,8 +23,6 @@ require (
 
 require (
 	github.com/Max-Sum/base32768 v0.0.0-20191205131208-7937843c71d5 // indirect
-	github.com/StackExchange/wmi v1.2.1 // indirect
-	github.com/aalpar/deheap v0.0.0-20210914013432-0cc84d79dec3 // indirect
 	github.com/abbot/go-http-auth v0.4.0 // indirect
 	github.com/aws/aws-sdk-go v1.44.29 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

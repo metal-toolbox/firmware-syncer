@@ -12,6 +12,7 @@ import (
 	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	rcloneHttp "github.com/rclone/rclone/backend/http"
 	rcloneLocal "github.com/rclone/rclone/backend/local"
@@ -106,12 +107,16 @@ type LocalFsConfig struct {
 	Root string
 }
 
-func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket) (*S3Downloader, error) {
+func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket, logLevel logrus.Level) (*S3Downloader, error) {
 	var err error
 
-	// TODO: used for debugging rclone requests
-	rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
-	rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
+	switch logLevel {
+	case logrus.DebugLevel:
+		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
+	case logrus.TraceLevel:
+		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
+		rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
+	}
 
 	downloader := &S3Downloader{
 		vendor: vendor,

@@ -90,13 +90,9 @@ func (a *ASRockRack) Stats() *providers.Metrics {
 	return a.metrics
 }
 
-func initDownloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket) (*providers.S3Downloader, error) {
-	return providers.NewS3Downloader(ctx, vendor, srcCfg, dstCfg)
-}
-
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := initDownloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg)
+		downloader, err := providers.NewS3Downloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg, a.logger.Level)
 		if err != nil {
 			return err
 		}

@@ -5,9 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
@@ -21,7 +19,6 @@ import (
 	rcloneStats "github.com/rclone/rclone/fs/accounting"
 	rcloneConfigmap "github.com/rclone/rclone/fs/config/configmap"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
-	rcloneSync "github.com/rclone/rclone/fs/sync"
 )
 
 const (
@@ -432,102 +429,6 @@ func (c *Downloader) CopyToFilestore(ctx context.Context, dstFilename, srcFilena
 	}
 
 	return nil
-}
-
-// Sync syncronises files between the srcURL and the dst filestore
-func (c *Downloader) Sync(ctx context.Context) error {
-	err := rcloneSync.Sync(ctx, c.filestore, c.src, true)
-	if err != nil {
-		return errors.Wrap(ErrSync, err.Error())
-	}
-
-	return nil
-}
-
-// DstFileExists checks if the given file exists in the destination
-//
-// note: the name parameter must be the full path name to the file including the file name
-//
-//	e.g: "/foo/bar/lala.bin"
-func (c *Downloader) FilestoreFileExists(ctx context.Context, name string) (bool, error) {
-	exists, err := fileExists(ctx, c.filestore, name)
-	if err != nil {
-		return false, errors.Wrap(ErrCheckFileExists, err.Error())
-	}
-
-	return exists, nil
-}
-
-// SrcFileExists checks if the given file exists in the source
-//
-// note: the name parameter must be the full path name to the file including the file name
-//
-//	e.g: "/foo/bar/lala.bin"
-func (c *Downloader) SrcFileExists(ctx context.Context, name string) (bool, error) {
-	exists, err := fileExists(ctx, c.src, name)
-	if err != nil {
-		return false, errors.Wrap(ErrCheckFileExists, err.Error())
-	}
-
-	return exists, nil
-}
-
-// fileExists returns true if a file exists, returns false if its a directory
-func fileExists(ctx context.Context, fs rcloneFs.Fs, name string) (bool, error) {
-	return rcloneFs.FileExists(ctx, fs, name)
-}
-
-// FilestoreFileModTime returns the file modification time in the destination
-//
-// Note: mod time is not available for s3 directory objects
-func (c *Downloader) FilestoreFileModTime(ctx context.Context, name string) (time.Time, error) {
-	var modtime time.Time
-
-	exists, err := fileExists(ctx, c.filestore, name)
-	if err != nil {
-		return modtime, errors.Wrap(ErrCheckFileExists, err.Error())
-	}
-
-	if !exists {
-		return modtime, errors.Wrap(ErrFileNotFound, name)
-	}
-
-	object, err := FindFileObjectByName(ctx, c.filestore, name)
-	if err != nil {
-		return modtime, errors.Wrap(ErrModTimeFile, err.Error())
-	}
-
-	return object.ModTime(ctx), nil
-}
-
-// FindFileObjectByName searches the directory of the given name and returns the matched file object
-// returns nil if the object was not found
-func FindFileObjectByName(ctx context.Context, fs rcloneFs.Fs, name string) (rcloneFs.Object, error) {
-	path := filepath.Dir(name)
-
-	objectsS3, err := fs.List(ctx, path)
-	if err != nil {
-		return nil, errors.Wrap(ErrListingFiles, err.Error())
-	}
-
-	if objectsS3.Len() == 0 {
-		return nil, nil
-	}
-
-	var object rcloneFs.Object
-
-	objectsS3.ForObject(func(obj rcloneFs.Object) {
-		// Trim prefix, since obj.String has no / prefix
-		if obj.String() == strings.TrimPrefix(name, "/") && !strings.HasSuffix(obj.String(), "/") {
-			object = obj
-		}
-	})
-
-	if object == nil {
-		return nil, errors.Wrap(ErrFileNotFound, name)
-	}
-
-	return object, nil
 }
 
 // initHttpFs initializes and returns a rcloneFs.Fs interface that can be used for Copy, Sync operations

@@ -584,12 +584,13 @@ func UpdateFilesPath(deviceVendor, deviceModel, slug, filename string) string {
 		return p
 	}
 
-	p = "/" + strings.Join([]string{
+	p = path.Join(
+		"/",
 		deviceVendor,
 		deviceModel,
 		slug,
 		filename,
-	}, "/")
+	)
 
 	return strings.Replace(p, "//", "/", -1)
 }

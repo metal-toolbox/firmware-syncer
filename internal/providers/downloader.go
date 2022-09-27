@@ -202,12 +202,7 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) erro
 
 	tmpFilename := path.Join(s.tmp.Root(), dstPath)
 
-	err = SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given StoreConfig

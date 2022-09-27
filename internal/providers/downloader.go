@@ -139,7 +139,7 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 	return downloader, nil
 }
 
-// CopyFile wraps rclone CopyFile to copy srcFilename to dstFilename
+// CopyFile wraps rclone CopyFile to copy firmware file from src to dst
 func (s *S3Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
 	var err error
 

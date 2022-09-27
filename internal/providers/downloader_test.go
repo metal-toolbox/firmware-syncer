@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
@@ -413,5 +414,112 @@ func Test_initS3Fs(t *testing.T) {
 				assert.Equal(t, tc.want, f.String())
 			}
 		})
+	}
+}
+
+func Test_UpdateFilesPath(t *testing.T) {
+	cases := []struct {
+		hwvendor string
+		hwmodel  string
+		slug     string
+		filename string
+		expected string
+	}{
+		{
+			"vendor",
+			"model",
+			"component",
+			"foo.bin",
+			"/vendor/model/component/foo.bin",
+		},
+		{
+			"dell",
+			"model",
+			"",
+			"",
+			"/dell/",
+		},
+		{
+			"dell",
+			"model",
+			"",
+			"bios.bin",
+			"/dell/model/bios.bin",
+		},
+	}
+
+	for _, tt := range cases {
+		p := UpdateFilesPath(tt.hwvendor, tt.hwmodel, tt.slug, tt.filename)
+		assert.Equal(t, tt.expected, p)
+	}
+}
+
+func Test_SplitURLPath(t *testing.T) {
+	cases := []struct {
+		httpURL  string
+		hostPart string
+		urlPart  string
+		err      error
+	}{
+		{
+			"https://example.com/foo/bar",
+			"https://example.com",
+			"/foo/bar",
+			nil,
+		},
+		{
+			"http://example.com/foo/bar",
+			"http://example.com",
+			"/foo/bar",
+			nil,
+		},
+		{
+			"http://example.com/foo/bar/",
+			"http://example.com",
+			"/foo/bar/",
+			nil,
+		},
+		{
+			"http://user:pass@example.com/foo/bar",
+			"http://user:pass@example.com",
+			"/foo/bar",
+			nil,
+		},
+		{
+			"http://user:pass@example.com/foo/bar?foo=baz&lala=112",
+			"http://user:pass@example.com",
+			"/foo/bar?foo=baz&lala=112",
+			nil,
+		},
+		{
+			"file://example.com/foo/bar",
+			"",
+			"",
+			ErrURLUnsupported,
+		},
+		{
+			"https://example.com/foo/bar/foo.bin",
+			"https://example.com",
+			"/foo/bar/foo.bin",
+			nil,
+		},
+		{
+			"https://user:pass@example.com/foo/bar/foo.bin",
+			"https://user:pass@example.com",
+			"/foo/bar/foo.bin",
+			nil,
+		},
+	}
+
+	for _, tt := range cases {
+		hostPart, urlPart, err := SplitURLPath(tt.httpURL)
+		if tt.err != nil {
+			assert.True(t, errors.Is(err, tt.err))
+		} else {
+			assert.Nil(t, err)
+		}
+
+		assert.Equal(t, tt.hostPart, hostPart)
+		assert.Equal(t, tt.urlPart, urlPart)
 	}
 }

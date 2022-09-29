@@ -12,21 +12,16 @@ import (
 )
 
 func Test_NewDownloader(t *testing.T) {
-	sConfig := &StoreConfig{
-		URL:  "s3://endpoint/stuff/",
-		Tmp:  "/tmp",
-		Root: "/test",
-		S3: &config.S3Bucket{
-			SecretKey: "foo",
-			AccessKey: "bar",
-			Endpoint:  "endpoint",
-			Bucket:    "stuff",
-			Region:    "region",
-		},
+	cfg := &config.S3Bucket{
+		SecretKey: "foo",
+		AccessKey: "bar",
+		Endpoint:  "endpoint",
+		Bucket:    "stuff",
+		Region:    "region",
 	}
 	cases := []struct {
 		srcURL     string
-		cfg        *StoreConfig
+		cfg        *config.S3Bucket
 		wantSrcURL string
 		wantDstURL string
 		wantTmp    string
@@ -35,7 +30,7 @@ func Test_NewDownloader(t *testing.T) {
 	}{
 		{
 			"https://foo/bar/baz.bin",
-			sConfig,
+			cfg,
 			"https://foo/bar/baz.bin",
 			"",
 			"/tmp",
@@ -67,7 +62,7 @@ func Test_NewDownloader(t *testing.T) {
 			}
 
 			if tc.cfg != nil {
-				assert.Equal(t, tc.cfg, got.storeCfg)
+				assert.Equal(t, tc.cfg, got.dstCfg)
 			}
 		})
 	}
@@ -130,100 +125,6 @@ func Test_S3Downloader(t *testing.T) {
 	}
 }
 
-func Test_FilestoreConfig(t *testing.T) {
-	cases := []struct {
-		rootDir string
-		cfg     *config.Filestore
-		want    *StoreConfig
-		err     error
-		name    string
-	}{
-		{
-			"/test",
-			&config.Filestore{Kind: "invalid"},
-			nil,
-			ErrStoreConfig,
-			"invalid filestore kind error returned",
-		},
-		{
-			"/test",
-			&config.Filestore{Kind: "s3"},
-			nil,
-			ErrStoreConfig,
-			"invalid s3 configuration",
-		},
-		{
-			"/test",
-			&config.Filestore{Kind: "s3", S3: &config.S3Bucket{}},
-			nil,
-			ErrStoreConfig,
-			"invalid s3 configuration",
-		},
-		{
-			"/test",
-			&config.Filestore{
-				Kind:   "s3",
-				TmpDir: "/tmp",
-				S3: &config.S3Bucket{
-					Region:    "region",
-					SecretKey: "foo",
-					AccessKey: "bar",
-					Endpoint:  "endpoint",
-					Bucket:    "stuff",
-				},
-			},
-			&StoreConfig{
-				URL:  "s3://endpoint/stuff/",
-				Tmp:  "/tmp",
-				Root: "/test",
-				S3: &config.S3Bucket{
-					Region:    "region",
-					SecretKey: "foo",
-					AccessKey: "bar",
-					Endpoint:  "endpoint",
-					Bucket:    "stuff",
-				},
-			},
-			nil,
-			"valid s3 configuration",
-		},
-		{
-			"/test",
-			&config.Filestore{
-				Kind:     "local",
-				TmpDir:   "/tmp",
-				LocalDir: "/foo/baz",
-			},
-			&StoreConfig{
-				URL: "local:///foo/baz",
-				Local: &LocalFsConfig{
-					Root: "/foo/baz",
-				},
-				Tmp:  "/tmp",
-				Root: "/test",
-			},
-			nil,
-			"valid local configuration",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := FilestoreConfig(tc.rootDir, tc.cfg)
-			if tc.err != nil {
-				assert.ErrorIs(t, err, tc.err)
-				return
-			}
-
-			assert.Nil(t, err)
-
-			if tc.want != nil {
-				assert.Equal(t, tc.want, got)
-			}
-		})
-	}
-}
-
 func Test_initSource(t *testing.T) {
 	cases := []struct {
 		srcURL string
@@ -261,48 +162,6 @@ func Test_initSource(t *testing.T) {
 			assert.Nil(t, err)
 			if tc.want != "" {
 				assert.Equal(t, tc.want, f.Name())
-			}
-		})
-	}
-}
-
-func Test_initStore(t *testing.T) {
-	cases := []struct {
-		cfg  *StoreConfig
-		err  error
-		want string
-		name string
-	}{
-		{
-			nil,
-			ErrFileStoreConfig,
-			"",
-			"FileStore config nil",
-		},
-		{
-			&StoreConfig{URL: "s3://bucket/foobar", Root: "/foobar", S3: &config.S3Bucket{Region: "region", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"}},
-			nil,
-			"S3 bucket foobar",
-			"init s3 filestore",
-		},
-		{
-			&StoreConfig{URL: "local://tmp/updates", Local: &LocalFsConfig{Root: "/tmp/updates"}},
-			nil,
-			"Local file system at /tmp/updates",
-			"init local fs filestore",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			f, err := initStore(context.TODO(), tc.cfg)
-			if tc.err != nil {
-				assert.ErrorIs(t, err, tc.err)
-				return
-			}
-			assert.Nil(t, err)
-			if tc.want != "" {
-				assert.Equal(t, tc.want, f.String())
 			}
 		})
 	}

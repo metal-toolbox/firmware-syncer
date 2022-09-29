@@ -5,25 +5,22 @@ import (
 	"testing"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_initDownloaderDUP(t *testing.T) {
-	fsConfig := &config.Filestore{
-		Kind:   "s3",
-		TmpDir: "/tmp",
-		S3: &config.S3Bucket{
-			Region:    "region",
-			SecretKey: "foo",
-			AccessKey: "bar",
-			Endpoint:  "endpoint",
-			Bucket:    "stuff",
-		},
+	cfg := &config.S3Bucket{
+		Region:    "region",
+		SecretKey: "foo",
+		AccessKey: "bar",
+		Endpoint:  "endpoint",
+		Bucket:    "stuff",
 	}
 
 	cases := []struct {
 		srcURL     string
-		cfg        *config.Filestore
+		cfg        *config.S3Bucket
 		wantSrcURL string
 		wantDstURL string
 		err        error
@@ -31,7 +28,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 	}{
 		{
 			"https://foo/bar/baz.bin",
-			fsConfig,
+			cfg,
 			"https://foo/bar/baz.bin",
 			"",
 			nil,
@@ -41,7 +38,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := initDownloaderDUP(context.TODO(), tc.srcURL, tc.cfg)
+			got, err := providers.NewDownloader(context.TODO(), tc.srcURL, tc.cfg)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

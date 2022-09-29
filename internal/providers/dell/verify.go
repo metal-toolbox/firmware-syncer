@@ -12,7 +12,7 @@ import (
 // returns nil if verify was successful
 func (d *DUP) Verify(ctx context.Context) error {
 	for _, fw := range d.firmwares {
-		downloader, err := initDownloaderDUP(ctx, fw.UpstreamURL, d.filestoreCfg)
+		downloader, err := providers.NewDownloader(ctx, fw.UpstreamURL, d.dstCfg)
 		if err != nil {
 			return err
 		}

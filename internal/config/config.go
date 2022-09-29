@@ -37,22 +37,6 @@ type Firmware struct {
 	FileCheckSum  string `yaml:"checksum"`
 }
 
-// Filestore declares configuration for where firmware are stored
-type Filestore struct {
-	// Kind is one of s3, local (defaults to s3)
-	Kind string `mapstructure:"kind"`
-	// Local directory path - when Kind is set to 'local'
-	LocalDir string `mapstructure:"local_dir"`
-	// S3 bucket configuration - when Kind is set to 's3'
-	S3 *S3Bucket `mapstructure:"s3_bucket"`
-	// Public key file path - the file containing the public key part used to verify firmware
-	PublicKeyFile string `mapstructure:"public_key_file"`
-	// Private key file path - the file containing the private key part used to sign firmware
-	PrivateKeyFile string `mapstructure:"private_key_file"`
-	// TmpDir is a work directory to generate checksums and signatures
-	TmpDir string `mapstructure:"tmp_dir"`
-}
-
 // S3Bucket holds configuration parameters to connect to an S3 compatible bucket
 type S3Bucket struct {
 	Region    string `mapstructure:"region"`   // AWS region location for the s3 bucket

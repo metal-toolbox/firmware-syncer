@@ -36,14 +36,13 @@ const (
 
 // DUP implements the Provider interface methods to retrieve dell DUP firmware files
 type DUP struct {
-	force        bool
-	config       *config.Provider
-	filestoreCfg *config.Filestore
-	firmwares    []*config.Firmware
-	signer       *providers.Signer
-	logger       *logrus.Logger
-	metrics      *providers.Metrics
-	inventory    *inventory.ServerService
+	config    *config.Provider
+	dstCfg    *config.S3Bucket
+	firmwares []*config.Firmware
+	signer    *providers.Signer
+	logger    *logrus.Logger
+	metrics   *providers.Metrics
+	inventory *inventory.ServerService
 }
 
 // NewDUP returns a new DUP firmware syncer object
@@ -75,24 +74,20 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 	if err != nil {
 		return nil, err
 	}
-	// initialize config.Filestore for the provider
-	filestoreCfg := config.Filestore{
-		Kind:     "s3",
-		LocalDir: "",
-		S3: &config.S3Bucket{
-			Region:    cfgProvider.RepositoryRegion,
-			Endpoint:  s3Endpoint,
-			Bucket:    s3Bucket,
-			AccessKey: os.Getenv("S3_ACCESS_KEY"),
-			SecretKey: os.Getenv("S3_SECRET_KEY"),
-		},
-		PublicKeyFile:  os.Getenv("SYNCER_PUBLIC_KEY_FILE"),
-		PrivateKeyFile: os.Getenv("SYNCER_PRIVATE_KEY_FILE"),
-		TmpDir:         "/tmp",
+
+	s3Cfg := &config.S3Bucket{
+		Region:    cfgProvider.RepositoryRegion,
+		Endpoint:  s3Endpoint,
+		Bucket:    s3Bucket,
+		AccessKey: os.Getenv("S3_ACCESS_KEY"),
+		SecretKey: os.Getenv("S3_SECRET_KEY"),
 	}
 
+	publicKeyFile := os.Getenv("SYNCER_PUBLIC_KEY_FILE")
+	privateKeyFile := os.Getenv("SYNCER_PRIVATE_KEY_FILE")
+
 	// init signer to sign and verify
-	s, err := providers.NewSigner(filestoreCfg.PrivateKeyFile, filestoreCfg.PublicKeyFile)
+	s, err := providers.NewSigner(privateKeyFile, publicKeyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -104,33 +99,17 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 	}
 
 	return &DUP{
-		// TODO: fix force parameter to be configurable
-		force:        true,
-		config:       cfgProvider,
-		filestoreCfg: &filestoreCfg,
-		firmwares:    firmwares,
-		signer:       s,
-		logger:       logger,
-		metrics:      providers.NewMetrics(),
-		inventory:    i,
+		config:    cfgProvider,
+		dstCfg:    s3Cfg,
+		firmwares: firmwares,
+		signer:    s,
+		logger:    logger,
+		metrics:   providers.NewMetrics(),
+		inventory: i,
 	}, nil
 }
 
 // Stats implements the Syncer interface to return metrics collected on Object, byte transfer stats
 func (d *DUP) Stats() *providers.Metrics {
 	return d.metrics
-}
-
-// initDownloaderDUP initializes the dell DUP file downloader
-// downloaders provides methods to Copy and Sync update file(s) from the source to the destination
-//
-// Dell updates installed as DUPs (updateConfig.Utility)
-// these have a single downloader to retrieve the file from the UpstreamURL
-func initDownloaderDUP(ctx context.Context, srcURL string, filestoreCfg *config.Filestore) (*providers.Downloader, error) {
-	storeCfg, err := providers.FilestoreConfig("/", filestoreCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return providers.NewDownloader(ctx, srcURL, storeCfg)
 }

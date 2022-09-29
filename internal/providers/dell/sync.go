@@ -51,7 +51,7 @@ func (d *DUP) Sync(ctx context.Context) error {
 func (d *DUP) syncDUPFiles(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		// dst path for DUP files - /firmware/dell/<model>/<component>/foo.bin
-		downloader, err := initDownloaderDUP(ctx, fw.UpstreamURL, d.filestoreCfg)
+		downloader, err := providers.NewDownloader(ctx, fw.UpstreamURL, d.dstCfg)
 		if err != nil {
 			return err
 		}

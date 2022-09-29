@@ -21,12 +21,6 @@ import (
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
 )
 
-const (
-	KindLocal = "local"
-	KindS3    = "s3"
-	KindHTTP  = "http"
-)
-
 var (
 	ErrDestPathUndefined  = errors.New("destination path is not specified")
 	ErrCopy               = errors.New("error copying files")
@@ -58,12 +52,11 @@ type Downloader struct {
 	dstURL string
 	// src is the remote file store
 	src rcloneFs.Fs
-	// filestore is the local/remote file store
-	filestore rcloneFs.Fs
+	// dst is the destination S3 file store
+	dst    rcloneFs.Fs
+	dstCfg *config.S3Bucket
 	// tmp is a temporary work file store
 	tmp rcloneFs.Fs
-	// StoreConfig this downloader was initialized with
-	storeCfg *StoreConfig
 }
 
 type S3Downloader struct {
@@ -80,23 +73,6 @@ type DownloaderStats struct {
 	BytesTransferred   int64
 	ObjectsTransferred int64
 	Errors             int64
-}
-
-// StoreConfig holds attributes for the filestore where files are downloaded
-type StoreConfig struct {
-	// URL points to the destination file store, the filestore is initialized based on the url scheme
-	// examples:
-	//   s3://<bucket-name>/<root>
-	//   local:///tmp/foo
-	URL string
-	// Path to mount as the tmp directory when downloading files to sign and verify
-	Tmp string
-	// S3 configuration - required when URL points to an s3 bucket
-	S3 *config.S3Bucket
-	// Local filesystem configuration - required when URL points to a local directory
-	Local *LocalFsConfig
-	// Path to root of the fs
-	Root string
 }
 
 // LocalFsConfig for the downloader
@@ -205,19 +181,22 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) erro
 	return SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
 }
 
-// NewDownloader initializes a downloader object based on the srcURL and the given StoreConfig
-func NewDownloader(ctx context.Context, srcURL string, storeCfg *StoreConfig) (*Downloader, error) {
+// NewDownloader initializes a downloader object based on the srcURL and the given dstCfg
+func NewDownloader(ctx context.Context, srcURL string, dstCfg *config.S3Bucket) (*Downloader, error) {
 	var err error
 
-	downloader := &Downloader{srcURL: srcURL}
+	downloader := &Downloader{
+		srcURL: srcURL,
+		dstCfg: dstCfg,
+	}
 
-	downloader.filestore, err = initStore(ctx, storeCfg)
+	downloader.dst, err = initS3Fs(ctx, dstCfg, "/")
 	if err != nil {
 		return nil, err
 	}
 
 	// init local tmp fs to generate checksum and signature files
-	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: storeCfg.Tmp})
+	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: "/tmp"})
 	if err != nil {
 		return nil, err
 	}
@@ -228,57 +207,7 @@ func NewDownloader(ctx context.Context, srcURL string, storeCfg *StoreConfig) (*
 		return nil, err
 	}
 
-	downloader.storeCfg = storeCfg
-
 	return downloader, nil
-}
-
-// FilestoreConfig accepts a srcURL and config.Filestore to return a StoreConfig
-// that can be passed to init a downloader
-//
-// This method sets up the StoreConfig.URL based on the filestore configuration included
-// nolint:gocyclo // validation is cyclomatic
-func FilestoreConfig(rootDir string, cfg *config.Filestore) (*StoreConfig, error) {
-	if cfg == nil || cfg.TmpDir == "" {
-		return nil, errors.Wrap(ErrStoreConfig, "config nil or no TmpDir defined")
-	}
-
-	storeCfg := &StoreConfig{Tmp: cfg.TmpDir}
-
-	switch cfg.Kind {
-	case KindS3:
-		if cfg.S3 == nil ||
-			cfg.S3.Bucket == "" ||
-			cfg.S3.SecretKey == "" ||
-			cfg.S3.AccessKey == "" ||
-			cfg.S3.Endpoint == "" ||
-			cfg.S3.Region == "" {
-			return nil, errors.Wrap(ErrStoreConfig, "s3 configuration nil or undefined")
-		}
-
-		storeCfg.S3 = cfg.S3
-		storeCfg.Root = rootDir
-
-		storeCfg.URL = cfg.S3.Endpoint + "/" + cfg.S3.Bucket + "/"
-
-		// prefix s3:// scheme
-		if !strings.HasPrefix(cfg.S3.Endpoint, "s3://") {
-			storeCfg.URL = "s3://" + storeCfg.URL
-		}
-
-	case KindLocal:
-		storeCfg.Local = &LocalFsConfig{Root: cfg.LocalDir}
-		storeCfg.URL = cfg.LocalDir
-		storeCfg.Root = rootDir
-
-		if !strings.HasPrefix(storeCfg.URL, "local://") {
-			storeCfg.URL = "local://" + storeCfg.URL
-		}
-	default:
-		return nil, errors.Wrap(ErrStoreConfig, "unsupport filestore Kind: %s"+cfg.Kind)
-	}
-
-	return storeCfg, nil
 }
 
 // initSource initializes the source URL based on its URL scheme and returns a rclone.Fs with Copy/Sync methods
@@ -302,46 +231,6 @@ func initSource(ctx context.Context, srcURL string) (rcloneFs.Fs, error) {
 	}
 
 	return fs, err
-}
-
-// initStore initializes the file store based on StoreConfig and returns a rclone.Fs with Copy/Sync methods
-func initStore(ctx context.Context, cfg *StoreConfig) (rcloneFs.Fs, error) {
-	var err error
-
-	var fs rcloneFs.Fs
-
-	if cfg == nil {
-		return nil, errors.Wrap(ErrFileStoreConfig, "got nil")
-	}
-
-	// init store configuration
-	switch {
-	case strings.HasPrefix(cfg.URL, "s3://"):
-		fs, err = initS3Fs(ctx, cfg.S3, cfg.Root)
-	case strings.HasPrefix(cfg.URL, "local://"):
-		fs, err = initLocalFs(ctx, cfg.Local)
-	default:
-		return nil, errors.Wrap(ErrUnsupportedFileStore, cfg.URL)
-	}
-
-	return fs, err
-}
-
-// StoreURL the file store URL configured for the downloader
-func (c *Downloader) FilestoreURL() string {
-	return strings.TrimSuffix(c.storeCfg.URL, "/")
-}
-
-func (c *Downloader) FilestoreRootDir() string {
-	if c.storeCfg.S3 != nil {
-		return c.storeCfg.Root
-	}
-
-	if c.storeCfg.Local != nil {
-		return c.storeCfg.Local.Root
-	}
-
-	return ""
 }
 
 // DstURL returns the destination URL configured when initializing the downloader

@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rclone/rclone v1.59.1
 	github.com/stretchr/testify v1.8.0
-	go.hollow.sh/serverservice v0.14.3
+	go.hollow.sh/serverservice v0.14.4
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 )
 
@@ -101,7 +101,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	gocloud.dev v0.26.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect

@@ -106,7 +106,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 				"src": fw.UpstreamURL,
 				"dst": dstURL,
 			},
-		).Trace("sync ASRockRack")
+		).Info("sync ASRockRack")
 
 		err = downloader.CopyFile(ctx, fw)
 		// collect metrics from downloader

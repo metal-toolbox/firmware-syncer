@@ -39,7 +39,6 @@ type DUP struct {
 	config    *config.Provider
 	dstCfg    *config.S3Bucket
 	firmwares []*config.Firmware
-	signer    *providers.Signer
 	logger    *logrus.Logger
 	metrics   *providers.Metrics
 	inventory *inventory.ServerService
@@ -83,15 +82,6 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 		SecretKey: os.Getenv("S3_SECRET_KEY"),
 	}
 
-	publicKeyFile := os.Getenv("SYNCER_PUBLIC_KEY_FILE")
-	privateKeyFile := os.Getenv("SYNCER_PRIVATE_KEY_FILE")
-
-	// init signer to sign and verify
-	s, err := providers.NewSigner(privateKeyFile, publicKeyFile)
-	if err != nil {
-		return nil, err
-	}
-
 	// init inventory
 	i, err := inventory.New(ctx, inventoryURL, logger)
 	if err != nil {
@@ -102,7 +92,6 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 		config:    cfgProvider,
 		dstCfg:    s3Cfg,
 		firmwares: firmwares,
-		signer:    s,
 		logger:    logger,
 		metrics:   providers.NewMetrics(),
 		inventory: i,

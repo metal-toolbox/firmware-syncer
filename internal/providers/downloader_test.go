@@ -13,7 +13,7 @@ import (
 
 func Test_NewDownloader(t *testing.T) {
 	vendor := "dell"
-	logLevel := logrus.InfoLevel
+	logger := &logrus.Logger{}
 	cfg := &config.S3Bucket{
 		SecretKey: "foo",
 		AccessKey: "bar",
@@ -43,7 +43,7 @@ func Test_NewDownloader(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logLevel)
+			got, err := NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logger)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return
@@ -72,7 +72,7 @@ func Test_NewDownloader(t *testing.T) {
 
 func Test_S3Downloader(t *testing.T) {
 	vendor := "asrockrack"
-	logLevel := logrus.InfoLevel
+	logger := &logrus.Logger{}
 	srcConfig := &config.S3Bucket{
 		Region:    "region",
 		SecretKey: "foo",
@@ -108,7 +108,7 @@ func Test_S3Downloader(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := NewS3Downloader(context.TODO(), vendor, tc.srcCfg, tc.dstCfg, logLevel)
+			got, err := NewS3Downloader(context.TODO(), vendor, tc.srcCfg, tc.dstCfg, logger)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

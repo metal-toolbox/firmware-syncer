@@ -92,7 +92,7 @@ func (a *ASRockRack) Stats() *providers.Metrics {
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := providers.NewS3Downloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg, a.logger.Level)
+		downloader, err := providers.NewS3Downloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg, a.logger)
 		if err != nil {
 			return err
 		}

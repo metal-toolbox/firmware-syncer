@@ -58,7 +58,8 @@ type Downloader struct {
 	dst    rcloneFs.Fs
 	dstCfg *config.S3Bucket
 	// tmp is a temporary work file store
-	tmp rcloneFs.Fs
+	tmp    rcloneFs.Fs
+	logger *logrus.Logger
 }
 
 type S3Downloader struct {
@@ -68,6 +69,7 @@ type S3Downloader struct {
 	dst    rcloneFs.Fs
 	dstCfg *config.S3Bucket
 	tmp    rcloneFs.Fs
+	logger *logrus.Logger
 }
 
 // DownloaderStats includes fields for stats on file/object transfer for Downloader
@@ -82,10 +84,10 @@ type LocalFsConfig struct {
 	Root string
 }
 
-func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket, logLevel logrus.Level) (*S3Downloader, error) {
+func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket, logger *logrus.Logger) (*S3Downloader, error) {
 	var err error
 
-	switch logLevel {
+	switch logger.GetLevel() {
 	case logrus.DebugLevel:
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
 	case logrus.TraceLevel:
@@ -97,6 +99,7 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 		vendor: vendor,
 		srcCfg: srcCfg,
 		dstCfg: dstCfg,
+		logger: logger,
 	}
 
 	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: "/tmp"})
@@ -184,10 +187,10 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) erro
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given dstCfg
-func NewDownloader(ctx context.Context, vendor, srcURL string, dstCfg *config.S3Bucket, logLevel logrus.Level) (*Downloader, error) {
+func NewDownloader(ctx context.Context, vendor, srcURL string, dstCfg *config.S3Bucket, logger *logrus.Logger) (*Downloader, error) {
 	var err error
 
-	switch logLevel {
+	switch logger.GetLevel() {
 	case logrus.DebugLevel:
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
 	case logrus.TraceLevel:
@@ -199,6 +202,7 @@ func NewDownloader(ctx context.Context, vendor, srcURL string, dstCfg *config.S3
 		vendor: vendor,
 		srcURL: srcURL,
 		dstCfg: dstCfg,
+		logger: logger,
 	}
 
 	downloader.dst, err = initS3Fs(ctx, dstCfg, "/")
@@ -274,6 +278,12 @@ func (c *Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
 
 	// In case the file already exists in dst, don't verify/copy it
 	if exists, _ := rcloneFs.FileExists(ctx, c.dst, c.DstPath(fw)); exists {
+		c.logger.WithFields(
+			logrus.Fields{
+				"filename": fw.Filename,
+			},
+		).Debug("firmware already exists at dst")
+
 		return nil
 	}
 
@@ -315,6 +325,13 @@ func (c *Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error 
 	}
 
 	tmpFilename := path.Join(c.tmp.Root(), dstPath)
+
+	c.logger.WithFields(
+		logrus.Fields{
+			"filename": tmpFilename,
+			"checksum": fw.FileCheckSum,
+		},
+	).Debug("validating file")
 
 	return SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
 }

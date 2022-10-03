@@ -12,7 +12,6 @@ require (
 require (
 	github.com/bmc-toolbox/common v0.0.0-20220808122349-335517678873
 	github.com/coreos/go-oidc v2.2.1+incompatible
-	github.com/frankbraun/gosignify v0.0.0-20210702013543-c91e79d30e91
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rclone/rclone v1.59.1
@@ -30,7 +29,6 @@ require (
 	github.com/cockroachdb/cockroach-go/v2 v2.2.16 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a // indirect
 	github.com/ericlagergren/decimal v0.0.0-20211103172832-aca2edc11f73 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect

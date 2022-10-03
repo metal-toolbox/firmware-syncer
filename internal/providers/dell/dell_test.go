@@ -7,9 +7,13 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Test_initDownloaderDUP(t *testing.T) {
+	vendor := "dell"
+	logLevel := logrus.InfoLevel
 	cfg := &config.S3Bucket{
 		Region:    "region",
 		SecretKey: "foo",
@@ -38,7 +42,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := providers.NewDownloader(context.TODO(), tc.srcURL, tc.cfg)
+			got, err := providers.NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logLevel)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

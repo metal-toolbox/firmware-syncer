@@ -12,6 +12,8 @@ import (
 )
 
 func Test_NewDownloader(t *testing.T) {
+	vendor := "dell"
+	logLevel := logrus.InfoLevel
 	cfg := &config.S3Bucket{
 		SecretKey: "foo",
 		AccessKey: "bar",
@@ -41,7 +43,7 @@ func Test_NewDownloader(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := NewDownloader(context.TODO(), tc.srcURL, tc.cfg)
+			got, err := NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logLevel)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

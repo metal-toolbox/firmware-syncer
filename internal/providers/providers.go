@@ -18,7 +18,6 @@ const (
 
 type Provider interface {
 	Sync(ctx context.Context) error
-	Verify(ctx context.Context) error
 	Stats() *Metrics
 }
 

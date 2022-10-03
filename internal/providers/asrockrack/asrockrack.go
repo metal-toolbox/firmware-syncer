@@ -124,7 +124,3 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 
 	return nil
 }
-
-func (a *ASRockRack) Verify(ctx context.Context) error {
-	return nil
-}

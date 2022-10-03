@@ -354,7 +354,6 @@ func (c *Downloader) DstBucket() string {
 func (c *Downloader) SrcPath(fw *config.Firmware) string {
 	u, _ := url.Parse(fw.UpstreamURL)
 	return u.Path
-
 }
 
 func (c *Downloader) DstPath(fw *config.Firmware) string {

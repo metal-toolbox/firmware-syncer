@@ -13,7 +13,7 @@ import (
 
 func Test_initDownloaderDUP(t *testing.T) {
 	vendor := "dell"
-	logLevel := logrus.InfoLevel
+	logger := &logrus.Logger{}
 	cfg := &config.S3Bucket{
 		Region:    "region",
 		SecretKey: "foo",
@@ -42,7 +42,7 @@ func Test_initDownloaderDUP(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := providers.NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logLevel)
+			got, err := providers.NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logger)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

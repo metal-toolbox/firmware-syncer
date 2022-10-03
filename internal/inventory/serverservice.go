@@ -119,7 +119,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 			logrus.Fields{
 				"uuid": u,
 			},
-		).Trace("published firmware")
+		).Info("published firmware")
 
 		return nil
 	}
@@ -132,7 +132,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 				"model":   firmware.Model,
 				"version": firmware.Version,
 			},
-		).Trace("firmware already published")
+		).Info("firmware already published")
 
 		return nil
 	}
@@ -147,7 +147,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 		logrus.Fields{
 			"uuids": strings.Join(uuids, ","),
 		},
-	).Trace("duplicate firmware IDs")
+	).Info("duplicate firmware IDs")
 
 	return errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
 }

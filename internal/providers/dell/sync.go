@@ -72,7 +72,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 				"src": downloader.SrcURL(),
 				"dst": dstURL,
 			},
-		).Trace("sync DUP")
+		).Info("sync DUP")
 
 		err = downloader.CopyToFilestore(ctx, downloadPath, fw.Filename)
 		// collect metrics from downloader

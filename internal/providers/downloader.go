@@ -124,6 +124,17 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 func (s *S3Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
 	var err error
 
+	// In case the file already exists in dst, don't verify/copy it
+	if exists, _ := rcloneFs.FileExists(ctx, s.dst, s.DstPath(fw)); exists {
+		s.logger.WithFields(
+			logrus.Fields{
+				"filename": fw.Filename,
+			},
+		).Debug("firmware already exists at dst")
+
+		return nil
+	}
+
 	err = s.VerifyFile(ctx, fw)
 	if err != nil {
 		return err

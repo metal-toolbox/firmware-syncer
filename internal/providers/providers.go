@@ -16,7 +16,7 @@ const (
 	ActionVerify             = "verify"
 )
 
-type Provider interface {
+type Vendor interface {
 	Sync(ctx context.Context) error
 	Stats() *Metrics
 }

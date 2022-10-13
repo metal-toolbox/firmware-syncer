@@ -18,7 +18,7 @@ const (
 
 // ASRockRack implements the Provider interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
-	config    *config.Provider
+	config    *config.Vendor
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
 	metrics   *providers.Metrics
@@ -27,7 +27,7 @@ type ASRockRack struct {
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Provider, error) {
+func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -35,7 +35,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Sy
 
 	var firmwares []*config.Firmware
 
-	for _, fw := range cfgProvider.Firmwares {
+	for _, fw := range cfgVendor.Firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
@@ -55,7 +55,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Sy
 		SecretKey: os.Getenv("ASRR_S3_SECRET_KEY"),
 	}
 
-	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
+	// parse S3 endpoint and bucket from cfgSyncer.RepositoryURL
 	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Sy
 	}
 
 	return &ASRockRack{
-		config:    cfgProvider,
+		config:    cfgVendor,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   providers.NewMetrics(),
@@ -92,7 +92,7 @@ func (a *ASRockRack) Stats() *providers.Metrics {
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := providers.NewS3Downloader(ctx, a.config.Vendor, a.srcCfg, a.dstCfg, a.logger)
+		downloader, err := providers.NewS3Downloader(ctx, a.config.Name, a.srcCfg, a.dstCfg, a.logger)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(a.config.Vendor, fw, dstURL)
+		err = a.inventory.Publish(a.config.Name, fw, dstURL)
 		if err != nil {
 			return err
 		}

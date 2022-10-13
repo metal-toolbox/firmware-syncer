@@ -19,11 +19,11 @@ type Syncer struct {
 	ServerServiceURL string `yaml:"serverserviceURL"`
 	RepositoryURL    string `yaml:"repositoryURL"`
 	RepositoryRegion string `yaml:"repositoryRegion"`
-	Providers        []*Provider
+	Vendors          []*Vendor
 }
 
-type Provider struct {
-	Vendor    string `yaml:"vendor"`
+type Vendor struct {
+	Name      string `yaml:"vendor"`
 	Firmwares []*Firmware
 }
 

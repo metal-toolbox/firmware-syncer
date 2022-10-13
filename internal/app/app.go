@@ -11,6 +11,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/providers"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers/asrockrack"
 	"github.com/metal-toolbox/firmware-syncer/internal/providers/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/providers/supermicro"
 )
 
 var (
@@ -72,6 +73,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			provs = append(provs, asrr)
+		case "supermicro":
+			var sm providers.Provider
+
+			sm, err = supermicro.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
+			if err != nil {
+				logger.Error("Failed to initialize Supermicro provider: " + err.Error())
+				return nil, err
+			}
+
+			provs = append(provs, sm)
 		default:
 			logger.Error("Provider not supported: " + cfgProvider.Vendor)
 			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgProvider.Vendor)

@@ -27,9 +27,9 @@ type ASRockRack struct {
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string, logger *logrus.Logger) (providers.Provider, error) {
+func New(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Provider, error) {
 	// RepositoryURL required
-	if cfgProvider.RepositoryURL == "" {
+	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
@@ -56,13 +56,13 @@ func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string,
 	}
 
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgProvider.RepositoryURL)
+	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
 	if err != nil {
 		return nil, err
 	}
 
 	dstS3Config := &config.S3Bucket{
-		Region:    cfgProvider.RepositoryRegion,
+		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3DstEndpoint,
 		Bucket:    s3DstBucket,
 		AccessKey: os.Getenv("S3_ACCESS_KEY"),
@@ -70,7 +70,7 @@ func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string,
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, inventoryURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, logger)
 	if err != nil {
 		return nil, err
 	}

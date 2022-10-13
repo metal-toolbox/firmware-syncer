@@ -45,9 +45,9 @@ type DUP struct {
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL string, logger *logrus.Logger) (providers.Provider, error) {
+func NewDUP(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Provider, error) {
 	// RepositoryURL required
-	if cfgProvider.RepositoryURL == "" {
+	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
@@ -69,13 +69,13 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 		}
 	}
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgProvider.RepositoryURL)
+	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
 	if err != nil {
 		return nil, err
 	}
 
 	s3Cfg := &config.S3Bucket{
-		Region:    cfgProvider.RepositoryRegion,
+		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3Endpoint,
 		Bucket:    s3Bucket,
 		AccessKey: os.Getenv("S3_ACCESS_KEY"),
@@ -83,7 +83,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, inventoryURL stri
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, inventoryURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, logger)
 	if err != nil {
 		return nil, err
 	}

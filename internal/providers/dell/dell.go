@@ -60,7 +60,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config
 		}
 
 		// Dell DUP files should be passed in with the file sha256 checksum
-		if fw.Utility == UpdateUtilDellDUP && fw.FileCheckSum == "" {
+		if fw.Utility == UpdateUtilDellDUP && fw.Checksum == "" {
 			return nil, errors.Wrap(config.ErrNoFileChecksum, fw.UpstreamURL)
 		}
 

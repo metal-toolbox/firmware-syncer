@@ -88,7 +88,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 		Model:         firmware.Model,
 		Filename:      firmware.Filename,
 		Version:       firmware.Version,
-		Checksum:      firmware.FileCheckSum,
+		Checksum:      firmware.Checksum,
 		UpstreamURL:   firmware.UpstreamURL,
 		RepositoryURL: dstURL,
 		Component:     firmware.ComponentSlug,

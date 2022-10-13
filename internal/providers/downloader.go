@@ -194,7 +194,7 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) erro
 
 	tmpFilename := path.Join(s.tmp.Root(), dstPath)
 
-	return SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
+	return SHA256ChecksumValidate(tmpFilename, fw.Checksum)
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given dstCfg
@@ -340,11 +340,11 @@ func (c *Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error 
 	c.logger.WithFields(
 		logrus.Fields{
 			"filename": tmpFilename,
-			"checksum": fw.FileCheckSum,
+			"checksum": fw.Checksum,
 		},
 	).Debug("validating file")
 
-	return SHA256ChecksumValidate(tmpFilename, fw.FileCheckSum)
+	return SHA256ChecksumValidate(tmpFilename, fw.Checksum)
 }
 
 func (c *Downloader) DstBucket() string {

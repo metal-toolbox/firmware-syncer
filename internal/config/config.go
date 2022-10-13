@@ -34,7 +34,7 @@ type Firmware struct {
 	Utility       string `yaml:"utility"`
 	UpstreamURL   string `yaml:"upstreamURL"`
 	Filename      string `yaml:"filename"`
-	FileCheckSum  string `yaml:"checksum"`
+	Checksum      string `yaml:"checksum"`
 }
 
 // S3Bucket holds configuration parameters to connect to an S3 compatible bucket

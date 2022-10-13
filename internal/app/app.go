@@ -45,7 +45,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 	}
 
 	// Load configuration
-	cfg, err := config.LoadSyncerConfig(configFile)
+	cfgSyncer, err := config.LoadSyncerConfig(configFile)
 	if err != nil {
 		logger.Error(err.Error())
 		return nil, err
@@ -53,12 +53,12 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 
 	var provs []providers.Provider
 
-	for _, cfgProvider := range cfg.Providers {
+	for _, cfgProvider := range cfgSyncer.Providers {
 		switch cfgProvider.Vendor {
 		case common.VendorDell:
 			var dup providers.Provider
 
-			dup, err = dell.NewDUP(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
+			dup, err = dell.NewDUP(context.TODO(), cfgProvider, cfgSyncer, logger)
 			if err != nil {
 				logger.Error("Failed to initialize Dell provider: " + err.Error())
 				return nil, err
@@ -68,7 +68,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorAsrockrack:
 			var asrr providers.Provider
 
-			asrr, err = asrockrack.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
+			asrr, err = asrockrack.New(context.TODO(), cfgProvider, cfgSyncer, logger)
 			if err != nil {
 				logger.Error("Failed to initialize ASRockRack provider:" + err.Error())
 				return nil, err
@@ -92,7 +92,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 	}
 
 	return &Syncer{
-		config:    cfg,
+		config:    cfgSyncer,
 		logger:    logger,
 		providers: provs,
 	}, nil

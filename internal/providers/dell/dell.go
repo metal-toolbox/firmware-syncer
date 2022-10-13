@@ -36,7 +36,7 @@ const (
 
 // DUP implements the Provider interface methods to retrieve dell DUP firmware files
 type DUP struct {
-	config    *config.Provider
+	config    *config.Vendor
 	dstCfg    *config.S3Bucket
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
@@ -45,7 +45,7 @@ type DUP struct {
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, cfgProvider *config.Provider, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Provider, error) {
+func NewDUP(ctx context.Context, cfgProvider *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")

@@ -27,6 +27,7 @@ type Syncer struct {
 	providers []providers.Provider
 }
 
+// nolint:gocyclo // silence cyclo warning for now until function can be re-worked
 // New returns a Syncer object configured with Providers
 func New(configFile string, logLevel int) (*Syncer, error) {
 	// Setup logger

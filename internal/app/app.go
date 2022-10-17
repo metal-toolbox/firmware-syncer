@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -54,7 +55,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 
 	for _, cfgProvider := range cfg.Providers {
 		switch cfgProvider.Vendor {
-		case "dell":
+		case common.VendorDell:
 			var dup providers.Provider
 
 			dup, err = dell.NewDUP(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
@@ -64,7 +65,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			provs = append(provs, dup)
-		case "asrockrack":
+		case common.VendorAsrockrack:
 			var asrr providers.Provider
 
 			asrr, err = asrockrack.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
@@ -74,7 +75,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			provs = append(provs, asrr)
-		case "supermicro":
+		case common.VendorSupermicro:
 			var sm providers.Provider
 
 			sm, err = supermicro.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)

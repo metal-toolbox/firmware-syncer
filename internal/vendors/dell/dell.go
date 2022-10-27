@@ -6,7 +6,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -34,18 +34,19 @@ const (
 // Updates files end up in the configured filestore under a directory structure determined by the
 // hardware vendor, model, component slug and update filename (if any)
 
-// DUP implements the Provider interface methods to retrieve dell DUP firmware files
+// DUP implements the Vendor interface methods to retrieve dell DUP firmware files
 type DUP struct {
-	config    *config.Vendor
+	syncer    *config.Syncer
+	vendor    *config.Vendor
 	dstCfg    *config.S3Bucket
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
-	metrics   *providers.Metrics
+	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, cfgProvider *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Vendor, error) {
+func NewDUP(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -53,7 +54,7 @@ func NewDUP(ctx context.Context, cfgProvider *config.Vendor, cfgSyncer *config.S
 
 	var firmwares []*config.Firmware
 
-	for _, fw := range cfgProvider.Firmwares {
+	for _, fw := range cfgVendor.Firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
@@ -89,16 +90,17 @@ func NewDUP(ctx context.Context, cfgProvider *config.Vendor, cfgSyncer *config.S
 	}
 
 	return &DUP{
-		config:    cfgProvider,
+		syncer:    cfgSyncer,
+		vendor:    cfgVendor,
 		dstCfg:    s3Cfg,
 		firmwares: firmwares,
 		logger:    logger,
-		metrics:   providers.NewMetrics(),
+		metrics:   vendors.NewMetrics(),
 		inventory: i,
 	}, nil
 }
 
 // Stats implements the Syncer interface to return metrics collected on Object, byte transfer stats
-func (d *DUP) Stats() *providers.Metrics {
+func (d *DUP) Stats() *vendors.Metrics {
 	return d.metrics
 }

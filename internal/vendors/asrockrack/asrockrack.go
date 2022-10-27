@@ -6,7 +6,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -16,18 +16,18 @@ const (
 	UpdateUtilASRockRack = "asrrmgnttool"
 )
 
-// ASRockRack implements the Provider interface methods to retrieve ASRockRack firmware files
+// ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
 	config    *config.Vendor
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
-	metrics   *providers.Metrics
+	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 	srcCfg    *config.S3Bucket
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (providers.Vendor, error) {
+func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -79,20 +79,20 @@ func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer
 		config:    cfgVendor,
 		firmwares: firmwares,
 		logger:    logger,
-		metrics:   providers.NewMetrics(),
+		metrics:   vendors.NewMetrics(),
 		inventory: i,
 		srcCfg:    srcS3Config,
 		dstCfg:    dstS3Config,
 	}, nil
 }
 
-func (a *ASRockRack) Stats() *providers.Metrics {
+func (a *ASRockRack) Stats() *vendors.Metrics {
 	return a.metrics
 }
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := providers.NewS3Downloader(ctx, a.config.Name, a.srcCfg, a.dstCfg, a.logger)
+		downloader, err := vendors.NewS3Downloader(ctx, a.config.Name, a.srcCfg, a.dstCfg, a.logger)
 		if err != nil {
 			return err
 		}

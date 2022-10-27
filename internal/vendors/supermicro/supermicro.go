@@ -6,7 +6,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -16,23 +16,24 @@ const (
 )
 
 type Supermicro struct {
-	config    *config.Provider
+	syncer    *config.Syncer
+	vendor    *config.Vendor
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
-	metrics   *providers.Metrics
+	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string, logger *logrus.Logger) (providers.Provider, error) {
+func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
-	if cfgProvider.RepositoryURL == "" {
+	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
 	var firmwares []*config.Firmware
 
-	for _, fw := range cfgProvider.Firmwares {
+	for _, fw := range cfgVendor.Firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
@@ -44,13 +45,13 @@ func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string,
 	}
 
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgProvider.RepositoryURL)
+	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
 	if err != nil {
 		return nil, err
 	}
 
 	dstS3Config := &config.S3Bucket{
-		Region:    cfgProvider.RepositoryRegion,
+		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3DstEndpoint,
 		Bucket:    s3DstBucket,
 		AccessKey: os.Getenv("S3_ACCESS_KEY"),
@@ -58,28 +59,29 @@ func New(ctx context.Context, cfgProvider *config.Provider, inventoryURL string,
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, inventoryURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Supermicro{
-		config:    cfgProvider,
+		syncer:    cfgSyncer,
+		vendor:    cfgVendor,
 		firmwares: firmwares,
 		logger:    logger,
-		metrics:   providers.NewMetrics(),
+		metrics:   vendors.NewMetrics(),
 		inventory: i,
 		dstCfg:    dstS3Config,
 	}, nil
 }
 
-func (s *Supermicro) Stats() *providers.Metrics {
+func (s *Supermicro) Stats() *vendors.Metrics {
 	return s.metrics
 }
 
 func (s *Supermicro) Sync(ctx context.Context) error {
 	for _, fw := range s.firmwares {
-		downloader, err := providers.NewDownloader(ctx, s.config.Vendor, fw.UpstreamURL, s.dstCfg, s.logger)
+		downloader, err := vendors.NewDownloader(ctx, s.vendor.Name, fw.UpstreamURL, s.dstCfg, s.logger)
 		if err != nil {
 			return err
 		}
@@ -103,7 +105,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = s.inventory.Publish(s.config.Vendor, fw, dstURL)
+		err = s.inventory.Publish(s.vendor.Name, fw, dstURL)
 		if err != nil {
 			return err
 		}

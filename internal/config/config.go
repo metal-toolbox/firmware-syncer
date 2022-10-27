@@ -19,6 +19,7 @@ type Syncer struct {
 	ServerServiceURL string `yaml:"serverserviceURL"`
 	RepositoryURL    string `yaml:"repositoryURL"`
 	RepositoryRegion string `yaml:"repositoryRegion"`
+	ArtifactsURL     string `yaml:"artifactsURL"`
 	Vendors          []*Vendor
 }
 

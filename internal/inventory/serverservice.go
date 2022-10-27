@@ -22,11 +22,16 @@ var (
 )
 
 type ServerService struct {
-	client *serverservice.Client
-	logger *logrus.Logger
+	artifactsURL string
+	client       *serverservice.Client
+	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, inventoryURL string, logger *logrus.Logger) (*ServerService, error) {
+func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
+	if artifactsURL == "" {
+		return nil, errors.New("missing artifacts URL")
+	}
+
 	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
 
 	if clientSecret == "" {
@@ -70,19 +75,42 @@ func New(ctx context.Context, inventoryURL string, logger *logrus.Logger) (*Serv
 		EndpointParams: url.Values{"audience": {audience}},
 	}
 
-	c, err := serverservice.NewClient(inventoryURL, oauthConfig.Client(ctx))
+	c, err := serverservice.NewClient(serverServiceURL, oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}
 
 	return &ServerService{
-		client: c,
-		logger: logger,
+		artifactsURL: artifactsURL,
+		client:       c,
+		logger:       logger,
 	}, nil
+}
+
+// getArtifactsURL returns the https artifactsURL for the given s3 dstURL
+func (s *ServerService) getArtifactsURL(dstURL string) (string, error) {
+	aURL, err := url.Parse(s.artifactsURL)
+	if err != nil {
+		return "", nil
+	}
+
+	dURL, err := url.Parse(dstURL)
+	if err != nil {
+		return "", nil
+	}
+
+	aURL.Path = dURL.Path
+
+	return aURL.String(), nil
 }
 
 // Publish adds firmware data to Hollow's ServerService
 func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL string) error {
+	artifactsURL, err := s.getArtifactsURL(dstURL)
+	if err != nil {
+		return err
+	}
+
 	cfv := serverservice.ComponentFirmwareVersion{
 		Vendor:        vendor,
 		Model:         firmware.Model,
@@ -90,7 +118,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 		Version:       firmware.Version,
 		Checksum:      firmware.Checksum,
 		UpstreamURL:   firmware.UpstreamURL,
-		RepositoryURL: dstURL,
+		RepositoryURL: artifactsURL,
 		Component:     firmware.ComponentSlug,
 	}
 

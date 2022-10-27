@@ -70,7 +70,7 @@ func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}

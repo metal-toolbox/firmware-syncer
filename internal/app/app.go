@@ -9,10 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers/asrockrack"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers/dell"
-	"github.com/metal-toolbox/firmware-syncer/internal/providers/supermicro"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
 )
 
 var (
@@ -22,10 +22,10 @@ var (
 )
 
 type Syncer struct {
-	dryRun    bool
-	config    *config.Syncer
-	logger    *logrus.Logger
-	providers []providers.Provider
+	dryRun  bool
+	config  *config.Syncer
+	logger  *logrus.Logger
+	vendors []vendors.Vendor
 }
 
 // nolint:gocyclo // silence cyclo warning for now until function can be re-worked
@@ -51,50 +51,50 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		return nil, err
 	}
 
-	var provs []providers.Provider
+	var fwVendors []vendors.Vendor
 
-	for _, cfgProvider := range cfgSyncer.Providers {
-		switch cfgProvider.Vendor {
+	for _, cfgVendor := range cfgSyncer.Vendors {
+		switch cfgVendor.Name {
 		case common.VendorDell:
-			var dup providers.Provider
+			var dup vendors.Vendor
 
-			dup, err = dell.NewDUP(context.TODO(), cfgProvider, cfgSyncer, logger)
+			dup, err = dell.NewDUP(context.TODO(), cfgVendor, cfgSyncer, logger)
 			if err != nil {
-				logger.Error("Failed to initialize Dell provider: " + err.Error())
+				logger.Error("Failed to initialize Dell vendor: " + err.Error())
 				return nil, err
 			}
 
-			provs = append(provs, dup)
+			fwVendors = append(fwVendors, dup)
 		case common.VendorAsrockrack:
-			var asrr providers.Provider
+			var asrr vendors.Vendor
 
-			asrr, err = asrockrack.New(context.TODO(), cfgProvider, cfgSyncer, logger)
+			asrr, err = asrockrack.New(context.TODO(), cfgVendor, cfgSyncer, logger)
 			if err != nil {
-				logger.Error("Failed to initialize ASRockRack provider:" + err.Error())
+				logger.Error("Failed to initialize ASRockRack vendor:" + err.Error())
 				return nil, err
 			}
 
-			provs = append(provs, asrr)
+			fwVendors = append(fwVendors, asrr)
 		case common.VendorSupermicro:
-			var sm providers.Provider
+			var sm vendors.Vendor
 
-			sm, err = supermicro.New(context.TODO(), cfgProvider, cfg.ServerServiceURL, logger)
+			sm, err = supermicro.New(context.TODO(), cfgVendor, cfgSyncer, logger)
 			if err != nil {
-				logger.Error("Failed to initialize Supermicro provider: " + err.Error())
+				logger.Error("Failed to initialize Supermicro vendor: " + err.Error())
 				return nil, err
 			}
 
-			provs = append(provs, sm)
+			fwVendors = append(fwVendors, sm)
 		default:
-			logger.Error("Provider not supported: " + cfgProvider.Vendor)
-			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgProvider.Vendor)
+			logger.Error("Vendor not supported: " + cfgVendor.Name)
+			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgVendor.Name)
 		}
 	}
 
 	return &Syncer{
-		config:    cfgSyncer,
-		logger:    logger,
-		providers: provs,
+		config:  cfgSyncer,
+		logger:  logger,
+		vendors: fwVendors,
 	}, nil
 }
 
@@ -102,8 +102,8 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 func (s *Syncer) SyncFirmwares(ctx context.Context, dryRun bool) error {
 	s.dryRun = dryRun
 
-	for _, provider := range s.providers {
-		err := provider.Sync(ctx)
+	for _, v := range s.vendors {
+		err := v.Sync(ctx)
 		if err != nil {
 			s.logger.Error("Failed to sync: " + err.Error())
 		}

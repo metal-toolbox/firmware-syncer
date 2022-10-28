@@ -15,7 +15,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rclone/rclone v1.59.2
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	go.hollow.sh/serverservice v0.14.4
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 )

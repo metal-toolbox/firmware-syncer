@@ -1,8 +1,14 @@
 package supermicro
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
@@ -112,4 +118,48 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func getChecksumFilename(id string) (checksum, filename string, err error) {
+	resp, err := http.Get(fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/checksum.txt", id))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	return parseChecksumAndFilename(resp.Body)
+}
+
+func parseChecksumAndFilename(checksumFile io.Reader) (checksum, filename string, err error) {
+	scanner := bufio.NewScanner(checksumFile)
+	checksum = ""
+	filename = ""
+
+	for i := 0; scanner.Scan() && i < 4; i++ {
+		line := scanner.Text()
+
+		switch {
+		case strings.HasPrefix(line, "/softfiles"):
+			if strings.Contains(line, "MD5") {
+				filename = strings.Split(strings.Split(line, "/")[3], " ")[0]
+				checksum = strings.TrimSpace(strings.Split(line, "=")[1])
+
+				break
+			} else {
+				continue
+			}
+		case strings.HasPrefix(line, "softfiles"):
+			filename = strings.Split(line, "/")[2]
+		case strings.HasPrefix(line, "MD5 CheckSum:"):
+			checksum = strings.TrimSpace(strings.Split(line, ":")[1])
+		default:
+			continue
+		}
+
+		if err := scanner.Err(); err != nil {
+			return "", "", err
+		}
+	}
+
+	return checksum, filename, nil
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
@@ -121,7 +122,16 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 }
 
 func getChecksumFilename(id string) (checksum, filename string, err error) {
-	resp, err := http.Get(fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/checksum.txt", id))
+	var httpClient = &http.Client{
+		Timeout: time.Second * 15,
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), "GET", fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/checksum.txt", id), http.NoBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}

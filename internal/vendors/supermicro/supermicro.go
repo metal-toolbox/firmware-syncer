@@ -4,8 +4,6 @@ import (
 	"archive/zip"
 	"bufio"
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -141,7 +139,7 @@ func downloadFirmwareArchive(id, archiveFilename, archiveChecksum, firmwareFilen
 		return err
 	}
 
-	if !validateMD5Checksum(zipArchivePath, archiveChecksum) {
+	if !vendors.ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
 		// wrap some checksum validation error here.
 		return err
 	}
@@ -199,7 +197,7 @@ func unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum stri
 		return nil, err
 	}
 
-	if !validateMD5Checksum(out.Name(), firmwareChecksum) {
+	if !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
 		return nil, err
 	}
 
@@ -262,21 +260,4 @@ func parseChecksumAndFilename(checksumFile io.Reader) (checksum, filename string
 	}
 
 	return checksum, filename, nil
-}
-
-func validateMD5Checksum(filename, checksum string) bool {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	h := md5.New()
-
-	_, err = io.Copy(h, f)
-	if err != nil {
-		return false
-	}
-
-	return checksum == hex.EncodeToString(h.Sum(nil))
 }

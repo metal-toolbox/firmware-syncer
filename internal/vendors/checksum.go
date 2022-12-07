@@ -2,9 +2,12 @@ package vendors
 
 import (
 	"bytes"
+	"crypto/md5"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -90,4 +93,22 @@ func SHA256ChecksumValidate(filename, checksum string) error {
 	}
 
 	return nil
+}
+
+func ValidateMD5Checksum(filename, checksum string) bool {
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+	defer f.Close()
+
+	h := md5.New()
+
+	_, err = io.Copy(h, f)
+	if err != nil {
+		return false
+	}
+
+	return checksum == hex.EncodeToString(h.Sum(nil))
 }

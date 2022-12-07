@@ -92,7 +92,7 @@ func Test_unzipFirmwareBinary(t *testing.T) {
 		{
 			// foobar3.zip
 			//  |-foobar/foobar.zip
-			"nested zip firmware file inside dir in archive",
+			"nested zip firmware file",
 			getPathToFixture("foobar3.zip"),
 			"foobar.bin",
 			"14758f1afd44c09b7992073ccf00b43d",

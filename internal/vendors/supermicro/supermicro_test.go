@@ -74,11 +74,11 @@ func Test_extractFirmware(t *testing.T) {
 		firmwareChecksum string
 	}{
 		{
-			// foobar.zip
-			//  |-foobar.bin
+			// foobar1.zip
+			//  |-foobar1.bin
 			"archive name matches firmware name",
-			getPathToFixture("foobar.zip"),
-			"foobar.bin",
+			getPathToFixture("foobar1.zip"),
+			"foobar1.bin",
 			"14758f1afd44c09b7992073ccf00b43d",
 		},
 		{

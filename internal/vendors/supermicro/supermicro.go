@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -91,33 +90,7 @@ func (s *Supermicro) Stats() *vendors.Metrics {
 }
 
 func (s *Supermicro) Sync(ctx context.Context) error {
-	for _, fw := range s.firmwares {
-		fwID := strings.Split(fw.UpstreamURL, "=")[1]
-
-		archiveChecksum, archiveName, err := getChecksumAndArchiveFilename(fwID)
-		if err != nil {
-			return err
-		}
-
-		err = downloadFirmwareArchive(fwID, archiveName, archiveChecksum, fw.Filename, fw.Checksum)
-		if err != nil {
-			return err
-		}
-	}
-
-	fmt.Println("finished Supermicro sync")
-
-	return nil
-}
-
-func downloadFirmwareArchive(id, archiveFilename, archiveChecksum, firmwareFilename, firmwareChecksum string) error {
-	// use rclone here to copy from https src to tmp dir dst
-	// TODO:
-	// 1. create tmp directory for the zip download
-	// 2. create io.writer for zip file
-	// 3. use rclone to download file from url to io.writer
-	// 4. verify downloaded archive matches the checksum
-	// create local tmp directory
+	// initialize a tmpDir so we can download and unpack zip archive
 	tmpDir, err := os.MkdirTemp(os.TempDir(), "verify-zip")
 	if err != nil {
 		return err
@@ -125,41 +98,55 @@ func downloadFirmwareArchive(id, archiveFilename, archiveChecksum, firmwareFilen
 
 	defer os.RemoveAll(tmpDir)
 
-	zipArchivePath := path.Join(tmpDir, archiveFilename)
+	for _, fw := range s.firmwares {
+		fwID := strings.Split(fw.UpstreamURL, "=")[1]
 
-	out, err := os.Create(zipArchivePath)
-	if err != nil {
-		return err
+		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(fwID)
+		if err != nil {
+			return err
+		}
+
+		archivePath, err := downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum, fw.Filename, fw.Checksum)
+		if err != nil {
+			return err
+		}
+
+		fwFile, err := extractFirmware(archivePath, fw.Filename, fw.Checksum)
+		if err != nil {
+			return err
+		}
+
+		// Copy fwFile to s3 bucket
+		fmt.Printf("Copying %s to destination S3 bucket\n", fwFile.Name())
 	}
 
-	zipArchiveURL := fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/%s", id, archiveFilename)
-
-	err = operations.CopyURLToWriter(context.Background(), zipArchiveURL, out)
-	if err != nil {
-		return err
-	}
-
-	if !vendors.ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
-		// wrap some checksum validation error here.
-		return err
-	}
-
-	// TODO: should use the value returned here to build fwPath
-	_, err = unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum)
-	if err != nil {
-		return err
-	}
-
-	fwPath := path.Dir(zipArchivePath) + firmwareFilename
-	// copy the firmware file from the tmp dir where it was extracted to the s3 bucket.
-	// operations.CopyFile(context.Background(), dstFilename, fwPath)
-	fmt.Printf("Copying %s to destination S3 bucket\n", fwPath)
+	fmt.Println("finished Supermicro sync")
 
 	return nil
 }
 
-func unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum string) (*os.File, error) {
-	r, err := zip.OpenReader(zipArchivePath)
+func downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum, firmwareFilename, firmwareChecksum string) (string, error) {
+	zipArchivePath := path.Join(tmpDir, filepath.Base(archiveURL))
+
+	out, err := os.Create(zipArchivePath)
+	if err != nil {
+		return "", err
+	}
+
+	err = operations.CopyURLToWriter(context.Background(), archiveURL, out)
+	if err != nil {
+		return "", err
+	}
+
+	if !vendors.ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
+		return "", vendors.ErrChecksumValidate
+	}
+
+	return zipArchivePath, nil
+}
+
+func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*os.File, error) {
+	r, err := zip.OpenReader(archivePath)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +162,7 @@ func unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum stri
 	}
 
 	if foundFile == nil {
-		return nil, errors.New(fmt.Sprintf("couldn't find file: %s in archive: %s", firmwareFilename, zipArchivePath))
+		return nil, errors.New(fmt.Sprintf("couldn't find file: %s in archive: %s", firmwareFilename, archivePath))
 	}
 
 	zipContents, err := foundFile.Open()
@@ -184,7 +171,7 @@ func unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum stri
 	}
 	defer zipContents.Close()
 
-	tmpDir := path.Dir(zipArchivePath)
+	tmpDir := path.Dir(archivePath)
 	tmpFilename := filepath.Base(foundFile.Name)
 
 	out, err := os.Create(path.Join(tmpDir, tmpFilename))
@@ -204,7 +191,7 @@ func unzipFirmwareBinary(zipArchivePath, firmwareFilename, firmwareChecksum stri
 	return out, nil
 }
 
-func getChecksumAndArchiveFilename(id string) (checksum, filename string, err error) {
+func getArchiveURLAndChecksum(id string) (url, checksum string, err error) {
 	var httpClient = &http.Client{
 		Timeout: time.Second * 15,
 	}
@@ -216,19 +203,26 @@ func getChecksumAndArchiveFilename(id string) (checksum, filename string, err er
 		http.NoBody,
 	)
 	if err != nil {
-		log.Fatal(err)
+		return "", "", err
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return "", "", err
 	}
 	defer resp.Body.Close()
 
-	return parseChecksumAndFilename(resp.Body)
+	filename, checksum, err := parseFilenameAndChecksum(resp.Body)
+	if err != nil {
+		return "", "", err
+	}
+
+	archiveURL := fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/%s", id, filename)
+
+	return archiveURL, checksum, nil
 }
 
-func parseChecksumAndFilename(checksumFile io.Reader) (checksum, filename string, err error) {
+func parseFilenameAndChecksum(checksumFile io.Reader) (filename, checksum string, err error) {
 	scanner := bufio.NewScanner(checksumFile)
 	checksum = ""
 	filename = ""
@@ -259,5 +253,5 @@ func parseChecksumAndFilename(checksumFile io.Reader) (checksum, filename string
 		}
 	}
 
-	return checksum, filename, nil
+	return filename, checksum, nil
 }

@@ -59,17 +59,17 @@ MD5 CheckSum: 3f5cecadf92192d86d049a99b36939ab
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			checksum, filename, _ := parseChecksumAndFilename(tc.checksumFile)
-			assert.Equal(t, tc.wantChecksum, checksum)
+			filename, checksum, _ := parseFilenameAndChecksum(tc.checksumFile)
 			assert.Equal(t, tc.wantFilename, filename)
+			assert.Equal(t, tc.wantChecksum, checksum)
 		})
 	}
 }
 
-func Test_unzipFirmwareBinary(t *testing.T) {
+func Test_extractFirmware(t *testing.T) {
 	cases := []struct {
 		name             string
-		zipArchivePath   string
+		archivePath      string
 		firmwareFilename string
 		firmwareChecksum string
 	}{
@@ -130,7 +130,7 @@ func Test_unzipFirmwareBinary(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := unzipFirmwareBinary(tc.zipArchivePath, tc.firmwareFilename, tc.firmwareChecksum)
+			f, err := extractFirmware(tc.archivePath, tc.firmwareFilename, tc.firmwareChecksum)
 			if err != nil {
 				assert.EqualError(t, err, "some error")
 				return

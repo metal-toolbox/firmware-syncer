@@ -176,7 +176,17 @@ func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 
 	var foundFile *zip.File
 
+	fwFilenameNoExt := strings.Replace(firmwareFilename, filepath.Ext(firmwareFilename), "", 1)
 	for _, f := range r.File {
+		if filepath.Ext(f.Name) == ".zip" && strings.Contains(f.Name, fwFilenameNoExt) {
+			foundFile = f
+			// Skip checksum verification on the nested zip archive,
+			// since we don't have a checksum for it.
+			firmwareChecksum = ""
+
+			break
+		}
+
 		if strings.HasSuffix(f.Name, firmwareFilename) {
 			foundFile = f
 			break
@@ -206,7 +216,14 @@ func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 		return nil, err
 	}
 
-	if !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
+	if filepath.Ext(out.Name()) == ".zip" {
+		out, err = extractFirmware(out.Name(), firmwareFilename, firmwareChecksum)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if firmwareChecksum != "" && !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
 		return nil, vendors.ErrChecksumValidate
 	}
 

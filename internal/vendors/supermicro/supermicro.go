@@ -90,14 +90,6 @@ func (s *Supermicro) Stats() *vendors.Metrics {
 }
 
 func (s *Supermicro) Sync(ctx context.Context) error {
-	// initialize a tmpDir so we can download and unpack zip archive
-	tmpDir, err := os.MkdirTemp(os.TempDir(), "verify-zip")
-	if err != nil {
-		return err
-	}
-
-	defer os.RemoveAll(tmpDir)
-
 	for _, fw := range s.firmwares {
 		fwID := strings.Split(fw.UpstreamURL, "=")[1]
 
@@ -106,7 +98,18 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
-		archivePath, err := downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum, fw.Filename, fw.Checksum)
+		downloader, err := vendors.NewDownloader(ctx, s.vendor.Name, archiveURL, s.dstCfg, s.logger)
+		if err != nil {
+			return err
+		}
+
+		// initialize a tmpDir so we can download and unpack the zip archive
+		tmpDir, err := os.MkdirTemp(downloader.Tmp().Root(), "firmware-archive")
+		if err != nil {
+			return err
+		}
+
+		archivePath, err := downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum)
 		if err != nil {
 			return err
 		}
@@ -116,16 +119,35 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
-		// Copy fwFile to s3 bucket
-		fmt.Printf("Copying %s to destination S3 bucket\n", fwFile.Name())
-	}
+		s.logger.WithFields(
+			logrus.Fields{
+				"filename": fwFile.Name(),
+				"s3":       downloader.DstPath(fw),
+			},
+		).Debug("Copying filename to destination S3 bucket")
 
-	fmt.Println("finished Supermicro sync")
+		// FIXME: fix this quick hack to something else
+		// Remove root of tmpdir from filename since CopyFile doesn't use it
+		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)
+
+		err = operations.CopyFile(context.Background(), downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
+		if err != nil {
+			return err
+		}
+
+		// Clean up tmpDir after copying the extracted firmware to dst.
+		os.RemoveAll(tmpDir)
+
+		err = s.inventory.Publish(s.vendor.Name, fw, downloader.DstPath(fw))
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum, firmwareFilename, firmwareChecksum string) (string, error) {
+func downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum string) (string, error) {
 	zipArchivePath := path.Join(tmpDir, filepath.Base(archiveURL))
 
 	out, err := os.Create(zipArchivePath)
@@ -185,7 +207,7 @@ func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 	}
 
 	if !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
-		return nil, err
+		return nil, vendors.ErrChecksumValidate
 	}
 
 	return out, nil

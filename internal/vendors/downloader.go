@@ -363,6 +363,16 @@ func (c *Downloader) DstPath(fw *config.Firmware) string {
 			c.vendor, fw.Model, fw.ComponentSlug, fw.Filename))
 }
 
+// maybe just export the fields directly
+func (c *Downloader) Tmp() rcloneFs.Fs {
+	return c.tmp
+}
+
+// maybe just export the fields directly
+func (c *Downloader) Dst() rcloneFs.Fs {
+	return c.dst
+}
+
 // initHttpFs initializes and returns a rcloneFs.Fs interface that can be used for Copy, Sync operations
 // the Fs is initialized based the urlHost, urlPath parameters
 //

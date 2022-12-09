@@ -17,6 +17,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
+	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
 )
@@ -103,6 +104,17 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
+		// In case the file already exists in dst, don't copy it
+		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(fw)); exists {
+			s.logger.WithFields(
+				logrus.Fields{
+					"filename": fw.Filename,
+				},
+			).Debug("firmware already exists at dst")
+
+			continue
+		}
+
 		// initialize a tmpDir so we can download and unpack the zip archive
 		tmpDir, err := os.MkdirTemp(downloader.Tmp().Root(), "firmware-archive")
 		if err != nil {
@@ -126,11 +138,10 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			},
 		).Debug("Copying filename to destination S3 bucket")
 
-		// FIXME: fix this quick hack to something else
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
 		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)
 
-		err = operations.CopyFile(context.Background(), downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
+		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
 		if err != nil {
 			return err
 		}

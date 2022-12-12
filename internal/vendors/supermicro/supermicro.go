@@ -96,6 +96,12 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 
 		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, fwID)
 		if err != nil {
+			s.logger.WithFields(
+				logrus.Fields{
+					"fwID": fwID,
+				},
+			).Debug("failed to get archiveURL and archiveChecksum")
+
 			return err
 		}
 
@@ -278,6 +284,12 @@ func parseFilenameAndChecksum(checksumFile io.Reader) (filename, checksum string
 	scanner := bufio.NewScanner(checksumFile)
 	checksum = ""
 	filename = ""
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("parsing failed: %s", r))
+		}
+	}()
 
 	for i := 0; scanner.Scan() && i < 4; i++ {
 		line := scanner.Text()

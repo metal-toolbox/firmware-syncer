@@ -31,7 +31,9 @@ MD5 CheckSum: 3f5cecadf92192d86d049a99b36939ab
 /softfiles/4390/SMT_MBIPMI_339_REDFISH.zip MD5 = 33cdcd726f36f8ac35d8a0e4cea4a2a8
 /softfiles/4390/SMT_MBIPMI_339_REDFISH.zip SHA1 = 103a717fbaf3b88f23e64e7bfe81e97ce2af10c3
 `
-
+	checksumFileExample4 := `
+/softfiles/MD5
+`
 	cases := []struct {
 		name         string
 		checksumFile io.Reader
@@ -56,10 +58,21 @@ MD5 CheckSum: 3f5cecadf92192d86d049a99b36939ab
 			"33cdcd726f36f8ac35d8a0e4cea4a2a8",
 			"SMT_MBIPMI_339_REDFISH.zip",
 		},
+		{"checksumFileExample4",
+			strings.NewReader(checksumFileExample4),
+			"",
+			"",
+		},
 	}
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			filename, checksum, _ := parseFilenameAndChecksum(tc.checksumFile)
+			filename, checksum, err := parseFilenameAndChecksum(tc.checksumFile)
+			if err != nil {
+				assert.ErrorContains(t, err, "parsing failed: runtime error:")
+				assert.Equal(t, tc.wantFilename, filename)
+				assert.Equal(t, tc.wantChecksum, checksum)
+			}
 			assert.Equal(t, tc.wantFilename, filename)
 			assert.Equal(t, tc.wantChecksum, checksum)
 		})

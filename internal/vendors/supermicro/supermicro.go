@@ -94,7 +94,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 	for _, fw := range s.firmwares {
 		fwID := strings.Split(fw.UpstreamURL, "=")[1]
 
-		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(fwID)
+		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, fwID)
 		if err != nil {
 			return err
 		}
@@ -243,13 +243,13 @@ func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 	return out, nil
 }
 
-func getArchiveURLAndChecksum(id string) (url, checksum string, err error) {
+func getArchiveURLAndChecksum(ctx context.Context, id string) (url, checksum string, err error) {
 	var httpClient = &http.Client{
 		Timeout: time.Second * 15,
 	}
 
 	req, err := http.NewRequestWithContext(
-		context.Background(),
+		ctx,
 		"GET",
 		fmt.Sprintf("https://www.supermicro.com/Bios/softfiles/%s/checksum.txt", id),
 		http.NoBody,

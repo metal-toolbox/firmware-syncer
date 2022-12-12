@@ -115,7 +115,7 @@ func Test_extractFirmware(t *testing.T) {
 			}
 			assert.Equal(t, tc.firmwareFilename, filepath.Base(f.Name()))
 			// Remove the unzipped file from the filesystem
-			os.Remove(f.Name())
+			defer os.Remove(f.Name())
 		})
 	}
 }

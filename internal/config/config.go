@@ -1,11 +1,17 @@
 package config
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/bmc-toolbox/common"
 	"gopkg.in/yaml.v2"
 )
 
@@ -16,26 +22,40 @@ var (
 )
 
 type Syncer struct {
-	ServerServiceURL string `yaml:"serverserviceURL"`
-	RepositoryURL    string `yaml:"repositoryURL"`
-	RepositoryRegion string `yaml:"repositoryRegion"`
-	ArtifactsURL     string `yaml:"artifactsURL"`
-	Vendors          []*Vendor
-}
-
-type Vendor struct {
-	Name      string `yaml:"vendor"`
-	Firmwares []*Firmware
+	ServerServiceURL    string `yaml:"serverserviceURL"`
+	RepositoryURL       string `yaml:"repositoryURL"`
+	RepositoryRegion    string `yaml:"repositoryRegion"`
+	ArtifactsURL        string `yaml:"artifactsURL"`
+	FirmwareManifestURL string `yaml:"firmwareManifestURL"`
 }
 
 type Firmware struct {
-	Version       string `yaml:"version"`
-	Model         string `yaml:"model"`
-	ComponentSlug string `yaml:"componentslug"`
-	Utility       string `yaml:"utility"`
-	UpstreamURL   string `yaml:"upstreamURL"`
-	Filename      string `yaml:"filename"`
-	Checksum      string `yaml:"checksum"`
+	Version       string
+	Model         string
+	ComponentSlug string
+	Utility       string
+	UpstreamURL   string
+	Filename      string
+	Checksum      string
+}
+
+// FirmwareRecord from modeldata.json
+type FirmwareRecord struct {
+	BuildDate       string `json:"build_date"`
+	Filename        string `json:"filename"`
+	FirmwareVersion string `json:"firmware_version"`
+	Latest          bool   `json:"latest"`
+	MD5Sum          string `json:"md5sum"`
+	VendorURI       string `json:"vendor_uri"`
+	// intentionally ignoring preerequisite field in modeldata.json
+	// because sometimes it's a bool (false) or a string with the prerequisite
+}
+
+// Model from modeldata.json
+type Model struct {
+	Model        string                      `json:"model"`
+	Manufacturer string                      `json:"manufacturer"`
+	Components   map[string][]FirmwareRecord `json:"firmware"`
 }
 
 // S3Bucket holds configuration parameters to connect to an S3 compatible bucket
@@ -61,6 +81,75 @@ func LoadSyncerConfig(configFile string) (*Syncer, error) {
 	}
 
 	return config, nil
+}
+
+func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]Firmware, error) {
+	var httpClient = &http.Client{
+		Timeout: time.Second * 15,
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		manifestURL,
+		http.NoBody,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var models []Model
+
+	err = json.Unmarshal(b, &models)
+	if err != nil {
+		return nil, err
+	}
+
+	firmwaresByVendor := make(map[string][]Firmware)
+
+	for _, m := range models {
+		for component, firmwareRecords := range m.Components {
+			for _, fw := range firmwareRecords {
+				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
+					Firmware{
+						Version:       fw.FirmwareVersion,
+						Model:         strings.ToLower(m.Model),
+						ComponentSlug: strings.ToLower(component),
+						Utility:       getUtility(m.Manufacturer),
+						UpstreamURL:   fw.VendorURI,
+						Filename:      fw.Filename,
+						Checksum:      fw.MD5Sum,
+					})
+			}
+		}
+	}
+
+	return firmwaresByVendor, nil
+}
+
+func getUtility(vendor string) string {
+	switch vendor {
+	case common.VendorDell:
+		// for now we only support dup for Dell
+		return "dup"
+	case common.VendorAsrockrack:
+		return "asrrmgnttool"
+	case common.VendorSupermicro:
+		return "sum"
+	}
+
+	return ""
 }
 
 func ParseRepositoryURL(repositoryURL string) (endpoint, bucket string, err error) {

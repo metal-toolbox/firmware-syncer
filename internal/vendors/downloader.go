@@ -481,6 +481,7 @@ func initS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.
 		"disable_checksum":     "false", // store MD5 checksum with object metadata
 		"force_path_style":     "true",
 		"no_check_bucket":      "true",
+		"no_head":              "true", // XXX 1.60.0 introduced s3 versions support and it issues a HEAD request with ?VersionId which causes a 403 error in our case.
 	}
 
 	mount := cfg.Bucket + root

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -37,7 +38,7 @@ const (
 // DUP implements the Vendor interface methods to retrieve dell DUP firmware files
 type DUP struct {
 	syncer    *config.Syncer
-	vendor    *config.Vendor
+	vendor    string
 	dstCfg    *config.S3Bucket
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
@@ -46,15 +47,15 @@ type DUP struct {
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func NewDUP(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var firmwares []*config.Firmware
+	var dupFirmwares []*config.Firmware
 
-	for _, fw := range cfgVendor.Firmwares {
+	for _, fw := range firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
@@ -66,7 +67,7 @@ func NewDUP(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syn
 		}
 
 		if fw.Utility == UpdateUtilDellDUP {
-			firmwares = append(firmwares, fw)
+			dupFirmwares = append(dupFirmwares, &fw)
 		}
 	}
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
@@ -91,9 +92,9 @@ func NewDUP(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syn
 
 	return &DUP{
 		syncer:    cfgSyncer,
-		vendor:    cfgVendor,
+		vendor:    common.VendorDell,
 		dstCfg:    s3Cfg,
-		firmwares: firmwares,
+		firmwares: dupFirmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -18,7 +19,7 @@ const (
 
 // ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
-	config    *config.Vendor
+	vendor    string
 	firmwares []*config.Firmware
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
@@ -27,22 +28,22 @@ type ASRockRack struct {
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var firmwares []*config.Firmware
+	var asrrFirmwares []*config.Firmware
 
-	for _, fw := range cfgVendor.Firmwares {
+	for _, fw := range firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
 		}
 
 		if fw.Utility == UpdateUtilASRockRack {
-			firmwares = append(firmwares, fw)
+			asrrFirmwares = append(asrrFirmwares, &fw)
 		}
 	}
 	// TODO: For now set this configuration from env vars but ideally this should come from
@@ -76,8 +77,8 @@ func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer
 	}
 
 	return &ASRockRack{
-		config:    cfgVendor,
-		firmwares: firmwares,
+		vendor:    common.VendorAsrockrack,
+		firmwares: asrrFirmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,
@@ -92,7 +93,7 @@ func (a *ASRockRack) Stats() *vendors.Metrics {
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := vendors.NewS3Downloader(ctx, a.config.Name, a.srcCfg, a.dstCfg, a.logger)
+		downloader, err := vendors.NewS3Downloader(ctx, a.vendor, a.srcCfg, a.dstCfg, a.logger)
 		if err != nil {
 			return err
 		}
@@ -116,7 +117,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(a.config.Name, fw, dstURL)
+		err = a.inventory.Publish(a.vendor, fw, dstURL)
 		if err != nil {
 			return err
 		}

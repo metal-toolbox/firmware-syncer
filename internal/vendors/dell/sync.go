@@ -21,7 +21,7 @@ func (d *DUP) Sync(ctx context.Context) error {
 func (d *DUP) syncDUPFiles(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		// dst path for DUP files - /firmware/dell/<model>/<component>/foo.bin
-		downloader, err := vendors.NewDownloader(ctx, d.vendor.Name, fw.UpstreamURL, d.dstCfg, d.logger)
+		downloader, err := vendors.NewDownloader(ctx, d.vendor, fw.UpstreamURL, d.dstCfg, d.logger)
 		if err != nil {
 			return err
 		}
@@ -38,13 +38,13 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 
 		err = downloader.CopyFile(ctx, fw)
 		// collect metrics from downloader
-		d.metrics.FromDownloader(downloader, d.vendor.Name, vendors.ActionSync)
+		d.metrics.FromDownloader(downloader, d.vendor, vendors.ActionSync)
 
 		if err != nil {
 			return err
 		}
 
-		err = d.inventory.Publish(d.vendor.Name, fw, dstURL)
+		err = d.inventory.Publish(d.vendor, fw, dstURL)
 		if err != nil {
 			return err
 		}

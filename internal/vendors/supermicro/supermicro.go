@@ -96,6 +96,14 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		fwID := strings.Split(fw.UpstreamURL, "=")[1]
 
 		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, fwID)
+
+		s.logger.WithFields(
+			logrus.Fields{
+				"archiveURL":      archiveURL,
+				"archiveChecksum": archiveChecksum,
+			},
+		).Debug("found archive")
+
 		if err != nil {
 			s.logger.WithFields(
 				logrus.Fields{
@@ -128,10 +136,20 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
+		s.logger.Debug("Downloading archive")
+
 		archivePath, err := downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum)
 		if err != nil {
 			return err
 		}
+
+		s.logger.WithFields(
+			logrus.Fields{
+				"archivePath": archivePath,
+			},
+		).Debug("Archive downloaded.")
+
+		s.logger.Debug("Extracting firmware from archive")
 
 		fwFile, err := extractFirmware(archivePath, fw.Filename, fw.Checksum)
 		if err != nil {
@@ -140,10 +158,16 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 
 		s.logger.WithFields(
 			logrus.Fields{
-				"filename": fwFile.Name(),
-				"s3":       downloader.DstPath(fw),
+				"fwFile": fwFile.Name(),
 			},
-		).Debug("Copying filename to destination S3 bucket")
+		).Debug("Firmware extracted.")
+
+		s.logger.WithFields(
+			logrus.Fields{
+				"src": fwFile.Name(),
+				"dst": downloader.DstPath(&fw),
+			},
+		).Info("Sync Supermicro")
 
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
 		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -28,30 +29,30 @@ const (
 
 type Supermicro struct {
 	syncer    *config.Syncer
-	vendor    *config.Vendor
-	firmwares []*config.Firmware
+	vendor    string
+	firmwares []config.Firmware
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var firmwares []*config.Firmware
+	var smFirmwares []config.Firmware
 
-	for _, fw := range cfgVendor.Firmwares {
+	for _, fw := range firmwares {
 		// UpstreamURL required
 		if fw.UpstreamURL == "" {
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
 		}
 
 		if fw.Utility == UpdateUtilSupermicro {
-			firmwares = append(firmwares, fw)
+			smFirmwares = append(smFirmwares, fw)
 		}
 	}
 
@@ -77,8 +78,8 @@ func New(ctx context.Context, cfgVendor *config.Vendor, cfgSyncer *config.Syncer
 
 	return &Supermicro{
 		syncer:    cfgSyncer,
-		vendor:    cfgVendor,
-		firmwares: firmwares,
+		vendor:    common.VendorSupermicro,
+		firmwares: smFirmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,
@@ -105,13 +106,13 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
-		downloader, err := vendors.NewDownloader(ctx, s.vendor.Name, archiveURL, s.dstCfg, s.logger)
+		downloader, err := vendors.NewDownloader(ctx, s.vendor, archiveURL, s.dstCfg, s.logger)
 		if err != nil {
 			return err
 		}
 
 		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(fw)); exists {
+		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(&fw)); exists {
 			s.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -147,7 +148,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
 		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)
 
-		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
+		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(&fw), tmpFwPath)
 		if err != nil {
 			return err
 		}
@@ -155,7 +156,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		// Clean up tmpDir after copying the extracted firmware to dst.
 		os.RemoveAll(tmpDir)
 
-		err = s.inventory.Publish(s.vendor.Name, fw, downloader.DstPath(fw))
+		err = s.inventory.Publish(s.vendor, &fw, downloader.DstPath(&fw))
 		if err != nil {
 			return err
 		}

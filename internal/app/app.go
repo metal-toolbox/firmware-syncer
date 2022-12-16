@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/bmc-toolbox/common"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
@@ -51,14 +50,21 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		return nil, err
 	}
 
+	// Load firmware manifest
+	firmwaresByVendor, err := config.LoadFirmwareManifest(context.TODO(), cfgSyncer.FirmwareManifestURL)
+	if err != nil {
+		logger.Error(err.Error())
+		return nil, err
+	}
+
 	var fwVendors []vendors.Vendor
 
-	for _, cfgVendor := range cfgSyncer.Vendors {
-		switch cfgVendor.Name {
+	for vendor, firmwares := range firmwaresByVendor {
+		switch vendor {
 		case common.VendorDell:
 			var dup vendors.Vendor
 
-			dup, err = dell.NewDUP(context.TODO(), cfgVendor, cfgSyncer, logger)
+			dup, err = dell.NewDUP(context.TODO(), firmwares, cfgSyncer, logger)
 			if err != nil {
 				logger.Error("Failed to initialize Dell vendor: " + err.Error())
 				return nil, err
@@ -68,7 +74,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorAsrockrack:
 			var asrr vendors.Vendor
 
-			asrr, err = asrockrack.New(context.TODO(), cfgVendor, cfgSyncer, logger)
+			asrr, err = asrockrack.New(context.TODO(), firmwares, cfgSyncer, logger)
 			if err != nil {
 				logger.Error("Failed to initialize ASRockRack vendor:" + err.Error())
 				return nil, err
@@ -78,7 +84,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorSupermicro:
 			var sm vendors.Vendor
 
-			sm, err = supermicro.New(context.TODO(), cfgVendor, cfgSyncer, logger)
+			sm, err = supermicro.New(context.TODO(), firmwares, cfgSyncer, logger)
 			if err != nil {
 				logger.Error("Failed to initialize Supermicro vendor: " + err.Error())
 				return nil, err
@@ -86,8 +92,8 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 
 			fwVendors = append(fwVendors, sm)
 		default:
-			logger.Error("Vendor not supported: " + cfgVendor.Name)
-			return nil, errors.Wrap(config.ErrProviderNotSupported, cfgVendor.Name)
+			logger.Error("Vendor not supported: " + vendor)
+			continue
 		}
 	}
 

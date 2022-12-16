@@ -2,6 +2,7 @@ package vendors
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -194,7 +195,11 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) erro
 
 	tmpFilename := path.Join(s.tmp.Root(), dstPath)
 
-	return SHA256ChecksumValidate(tmpFilename, fw.Checksum)
+	if !ValidateMD5Checksum(tmpFilename, fw.Checksum) {
+		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
+	}
+
+	return nil
 }
 
 // NewDownloader initializes a downloader object based on the srcURL and the given dstCfg
@@ -344,7 +349,11 @@ func (c *Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error 
 		},
 	).Debug("validating file")
 
-	return SHA256ChecksumValidate(tmpFilename, fw.Checksum)
+	if !ValidateMD5Checksum(tmpFilename, fw.Checksum) {
+		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
+	}
+
+	return nil
 }
 
 func (c *Downloader) DstBucket() string {

@@ -203,7 +203,7 @@ func downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum string) (string
 	}
 
 	if !vendors.ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
-		return "", vendors.ErrChecksumValidate
+		return "", errors.Wrap(vendors.ErrChecksumValidate, fmt.Sprintf("zipArchivePath: %s, expected checksum: %s", zipArchivePath, archiveChecksum))
 	}
 
 	return zipArchivePath, nil
@@ -268,7 +268,7 @@ func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 	}
 
 	if firmwareChecksum != "" && !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
-		return nil, vendors.ErrChecksumValidate
+		return nil, errors.Wrap(vendors.ErrChecksumValidate, fmt.Sprintf("firmware: %s, expected checksum: %s", out.Name(), firmwareChecksum))
 	}
 
 	return out, nil

@@ -40,7 +40,7 @@ type DUP struct {
 	syncer    *config.Syncer
 	vendor    string
 	dstCfg    *config.S3Bucket
-	firmwares []*config.Firmware
+	firmwares []config.Firmware
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
@@ -53,7 +53,7 @@ func NewDUP(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var dupFirmwares []*config.Firmware
+	var dupFirmwares []config.Firmware
 
 	for _, fw := range firmwares {
 		// UpstreamURL required
@@ -67,7 +67,7 @@ func NewDUP(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.
 		}
 
 		if fw.Utility == UpdateUtilDellDUP {
-			dupFirmwares = append(dupFirmwares, &fw)
+			dupFirmwares = append(dupFirmwares, fw)
 		}
 	}
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL

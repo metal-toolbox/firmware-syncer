@@ -20,7 +20,7 @@ const (
 // ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
 	vendor    string
-	firmwares []*config.Firmware
+	firmwares []config.Firmware
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
@@ -34,7 +34,7 @@ func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syn
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var asrrFirmwares []*config.Firmware
+	var asrrFirmwares []config.Firmware
 
 	for _, fw := range firmwares {
 		// UpstreamURL required
@@ -43,7 +43,7 @@ func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syn
 		}
 
 		if fw.Utility == UpdateUtilASRockRack {
-			asrrFirmwares = append(asrrFirmwares, &fw)
+			asrrFirmwares = append(asrrFirmwares, fw)
 		}
 	}
 	// TODO: For now set this configuration from env vars but ideally this should come from
@@ -98,7 +98,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		dstPath := downloader.DstPath(fw)
+		dstPath := downloader.DstPath(&fw)
 
 		dstURL := "s3://" + downloader.DstBucket() + dstPath
 
@@ -109,7 +109,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			},
 		).Info("sync ASRockRack")
 
-		err = downloader.CopyFile(ctx, fw)
+		err = downloader.CopyFile(ctx, &fw)
 		// collect metrics from downloader
 		// a.metrics.FromDownloader(downloader, a.config.Vendor, providers.ActionSync)
 
@@ -117,7 +117,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(a.vendor, fw, dstURL)
+		err = a.inventory.Publish(a.vendor, &fw, dstURL)
 		if err != nil {
 			return err
 		}

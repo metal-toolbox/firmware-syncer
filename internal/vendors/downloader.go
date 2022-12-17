@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -167,10 +166,7 @@ func (s *S3Downloader) SrcPath(fw *config.Firmware) string {
 }
 
 func (s *S3Downloader) DstPath(fw *config.Firmware) string {
-	return path.Join(
-		"/firmware",
-		UpdateFilesPath(
-			s.vendor, fw.Model, fw.ComponentSlug, fw.Filename))
+	return path.Join("/firmware", s.vendor, fw.Filename)
 }
 
 func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error {
@@ -366,10 +362,7 @@ func (c *Downloader) SrcPath(fw *config.Firmware) string {
 }
 
 func (c *Downloader) DstPath(fw *config.Firmware) string {
-	return path.Join(
-		"/firmware",
-		UpdateFilesPath(
-			c.vendor, fw.Model, fw.ComponentSlug, fw.Filename))
+	return path.Join("/firmware", c.vendor, fw.Filename)
 }
 
 // maybe just export the fields directly
@@ -527,27 +520,4 @@ func SplitURLPath(httpURL string) (hostPart, pathPart string, err error) {
 	}
 
 	return hostPart, pathPart, nil
-}
-
-// UpdateFilesPath returns the directory, file path destination for the update
-// based on the device vendor, model, component slug attributes
-//
-// This filepath structure is used to store and retrieve firmware
-func UpdateFilesPath(deviceVendor, deviceModel, slug, filename string) string {
-	var p string
-	// Update configuration for dells where a filename isn't specified indicates the updates are an entire repository
-	if deviceVendor == common.VendorDell && filename == "" {
-		p = "/" + deviceVendor + "/"
-		return p
-	}
-
-	p = path.Join(
-		"/",
-		deviceVendor,
-		deviceModel,
-		slug,
-		filename,
-	)
-
-	return strings.Replace(p, "//", "/", -1)
 }

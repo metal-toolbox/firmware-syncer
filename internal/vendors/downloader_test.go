@@ -278,43 +278,6 @@ func Test_initS3Fs(t *testing.T) {
 	}
 }
 
-func Test_UpdateFilesPath(t *testing.T) {
-	cases := []struct {
-		hwvendor string
-		hwmodel  string
-		slug     string
-		filename string
-		expected string
-	}{
-		{
-			"vendor",
-			"model",
-			"component",
-			"foo.bin",
-			"/vendor/model/component/foo.bin",
-		},
-		{
-			"dell",
-			"model",
-			"",
-			"",
-			"/dell/",
-		},
-		{
-			"dell",
-			"model",
-			"",
-			"bios.bin",
-			"/dell/model/bios.bin",
-		},
-	}
-
-	for _, tt := range cases {
-		p := UpdateFilesPath(tt.hwvendor, tt.hwmodel, tt.slug, tt.filename)
-		assert.Equal(t, tt.expected, p)
-	}
-}
-
 func Test_SplitURLPath(t *testing.T) {
 	cases := []struct {
 		httpURL  string

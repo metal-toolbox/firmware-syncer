@@ -271,6 +271,8 @@ github.com/blang/semver v3.1.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnweb
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/bmc-toolbox/common v0.0.0-20220808122349-335517678873 h1:aHFMwerTuTpn38Q5LlqkP53RC4V6VYUL7nLa6E3EUT4=
 github.com/bmc-toolbox/common v0.0.0-20220808122349-335517678873/go.mod h1:SY//n1PJjZfbFbmAsB6GvEKbc7UXz3d30s3kWxfJQ/c=
+github.com/bmc-toolbox/common v0.0.0-20221115135648-0b584f504396 h1:MAIYVFtt/Hnhx0Cth6T9pnLTJnZKppzi7LHue4KpPtg=
+github.com/bmc-toolbox/common v0.0.0-20221115135648-0b584f504396/go.mod h1:SY//n1PJjZfbFbmAsB6GvEKbc7UXz3d30s3kWxfJQ/c=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869/go.mod h1:Ekp36dRnpXw/yCqJaO+ZrUyxD+3VXMFFr56k5XYrpB4=
 github.com/bshuster-repo/logrus-logstash-hook v0.4.1/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
 github.com/buengese/sgzip v0.1.1 h1:ry+T8l1mlmiWEsDrH/YHZnCVWD2S3im1KLsyO+8ZmTU=

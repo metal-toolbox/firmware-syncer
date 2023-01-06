@@ -14,7 +14,7 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rclone/rclone v1.60.1
+	github.com/rclone/rclone v1.61.1
 	github.com/stretchr/testify v1.8.1
 	go.hollow.sh/serverservice v0.15.0
 	golang.org/x/oauth2 v0.4.0
@@ -34,6 +34,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.8.2 // indirect
+	github.com/go-chi/chi/v5 v5.0.7 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

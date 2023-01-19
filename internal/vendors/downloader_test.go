@@ -7,169 +7,9 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/sirupsen/logrus"
 )
 
-func Test_NewDownloader(t *testing.T) {
-	vendor := "dell"
-	logger := &logrus.Logger{}
-	cfg := &config.S3Bucket{
-		SecretKey: "foo",
-		AccessKey: "bar",
-		Endpoint:  "endpoint",
-		Bucket:    "stuff",
-		Region:    "region",
-	}
-	cases := []struct {
-		srcURL     string
-		cfg        *config.S3Bucket
-		wantSrcURL string
-		wantDstURL string
-		wantTmp    string
-		err        error
-		name       string
-	}{
-		{
-			"https://foo/bar/baz.bin",
-			cfg,
-			"https://foo/bar/baz.bin",
-			"",
-			"/tmp",
-			nil,
-			"valid downloader object returned",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := NewDownloader(context.TODO(), vendor, tc.srcURL, tc.cfg, logger)
-			if tc.err != nil {
-				assert.ErrorIs(t, err, tc.err)
-				return
-			}
-
-			assert.Nil(t, err)
-
-			if tc.wantSrcURL != "" {
-				assert.Equal(t, tc.wantSrcURL, got.srcURL)
-			}
-
-			if tc.wantSrcURL != "" {
-				assert.Equal(t, tc.wantDstURL, got.dstURL)
-			}
-
-			if tc.wantTmp != "" {
-				assert.Equal(t, tc.wantTmp, got.tmp.Root())
-			}
-
-			if tc.cfg != nil {
-				assert.Equal(t, tc.cfg, got.dstCfg)
-			}
-		})
-	}
-}
-
-func Test_S3Downloader(t *testing.T) {
-	vendor := "asrockrack"
-	logger := &logrus.Logger{}
-	srcConfig := &config.S3Bucket{
-		Region:    "region",
-		SecretKey: "foo",
-		AccessKey: "bar",
-		Endpoint:  "endpoint",
-		Bucket:    "src-bucket",
-	}
-	dstConfig := &config.S3Bucket{
-		Region:    "region",
-		SecretKey: "foo",
-		AccessKey: "bar",
-		Endpoint:  "endpoint",
-		Bucket:    "dst-bucket",
-	}
-
-	cases := []struct {
-		name          string
-		srcCfg        *config.S3Bucket
-		dstCfg        *config.S3Bucket
-		wantSrcBucket string
-		wantDstBucket string
-		err           error
-	}{
-		{
-			"S3 downloader initialization",
-			srcConfig,
-			dstConfig,
-			"src-bucket",
-			"dst-bucket",
-			nil,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := NewS3Downloader(context.TODO(), vendor, tc.srcCfg, tc.dstCfg, logger)
-			if tc.err != nil {
-				assert.ErrorIs(t, err, tc.err)
-				return
-			}
-
-			assert.Nil(t, err)
-
-			if tc.wantSrcBucket != "" {
-				assert.Equal(t, tc.wantSrcBucket, got.SrcBucket())
-			}
-
-			if tc.wantDstBucket != "" {
-				assert.Equal(t, tc.wantDstBucket, got.DstBucket())
-			}
-		})
-	}
-}
-
-func Test_initSource(t *testing.T) {
-	cases := []struct {
-		srcURL string
-		err    error
-		want   string
-		name   string
-	}{
-		{
-			"",
-			ErrSourceURL,
-			"",
-			"sourceURL empty",
-		},
-		{
-			"unsupported://foo/baz.bin",
-			ErrSourceURL,
-			"",
-			"unsupported URL scheme",
-		},
-		{
-			"http://foo/baz.bin",
-			nil,
-			"http://foo/baz.bin",
-			"init source rclone fs",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			f, err := initSource(context.TODO(), tc.srcURL)
-			if tc.err != nil {
-				assert.ErrorIs(t, err, tc.err)
-				return
-			}
-			assert.Nil(t, err)
-			if tc.want != "" {
-				assert.Equal(t, tc.want, f.Name())
-			}
-		})
-	}
-}
-
-func Test_initLocalFs(t *testing.T) {
+func Test_InitLocalFs(t *testing.T) {
 	cases := []struct {
 		cfg  *LocalFsConfig
 		err  error
@@ -198,7 +38,7 @@ func Test_initLocalFs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := initLocalFs(context.TODO(), tc.cfg)
+			f, err := InitLocalFs(context.TODO(), tc.cfg)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return
@@ -211,7 +51,7 @@ func Test_initLocalFs(t *testing.T) {
 	}
 }
 
-func Test_initS3Fs(t *testing.T) {
+func Test_InitS3Fs(t *testing.T) {
 	cases := []struct {
 		cfg  *config.S3Bucket
 		root string
@@ -265,7 +105,7 @@ func Test_initS3Fs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := initS3Fs(context.TODO(), tc.cfg, tc.root)
+			f, err := InitS3Fs(context.TODO(), tc.cfg, tc.root)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 				return

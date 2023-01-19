@@ -155,7 +155,7 @@ func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmw
 				s.logger.WithFields(
 					logrus.Fields{
 						"uuid":    &firmwares[0].UUID,
-						"vendor":  &firmwares[0].Vendor,
+						"vendor":  firmwares[0].Vendor,
 						"model":   cfv.Model,
 						"version": cfv.Version,
 					},

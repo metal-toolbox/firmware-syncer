@@ -80,6 +80,22 @@ func (s *Supermicro) Stats() *vendors.Metrics {
 	return s.metrics
 }
 
+func (s *Supermicro) initRcloneFs(ctx context.Context) (dstFs, tmpFs fs.Fs, err error) {
+	vendors.SetRcloneLogging(s.logger)
+
+	dstFs, err = vendors.InitS3Fs(ctx, s.dstCfg, "/")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tmpFs, err = vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return dstFs, tmpFs, err
+}
+
 func (s *Supermicro) Sync(ctx context.Context) error {
 	for _, fw := range s.firmwares {
 		fwID := strings.Split(fw.UpstreamURL, "=")[1]
@@ -103,13 +119,13 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 			return err
 		}
 
-		downloader, err := vendors.NewDownloader(ctx, s.vendor, archiveURL, s.dstCfg, s.logger)
+		dstFs, tmpFs, err := s.initRcloneFs(ctx)
 		if err != nil {
 			return err
 		}
 
 		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(fw)); exists {
+		if exists, _ := fs.FileExists(ctx, dstFs, vendors.DstPath(s.vendor, fw)); exists {
 			s.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -120,7 +136,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		}
 
 		// initialize a tmpDir so we can download and unpack the zip archive
-		tmpDir, err := os.MkdirTemp(downloader.Tmp().Root(), "firmware-archive")
+		tmpDir, err := os.MkdirTemp(tmpFs.Root(), "firmware-archive")
 		if err != nil {
 			return err
 		}
@@ -154,14 +170,14 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		s.logger.WithFields(
 			logrus.Fields{
 				"src": fwFile.Name(),
-				"dst": downloader.DstPath(fw),
+				"dst": vendors.DstPath(s.vendor, fw),
 			},
 		).Info("Sync Supermicro")
 
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
-		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)
+		tmpFwPath := strings.Replace(fwFile.Name(), tmpFs.Root(), "", 1)
 
-		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
+		err = operations.CopyFile(ctx, dstFs, tmpFs, vendors.DstPath(s.vendor, fw), tmpFwPath)
 		if err != nil {
 			return err
 		}
@@ -169,7 +185,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		// Clean up tmpDir after copying the extracted firmware to dst.
 		os.RemoveAll(tmpDir)
 
-		err = s.inventory.Publish(s.vendor, fw, downloader.DstPath(fw))
+		err = s.inventory.Publish(s.vendor, fw, vendors.DstPath(s.vendor, fw))
 		if err != nil {
 			return err
 		}

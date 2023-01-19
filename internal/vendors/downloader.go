@@ -16,7 +16,6 @@ import (
 	rcloneLocal "github.com/rclone/rclone/backend/local"
 	rcloneS3 "github.com/rclone/rclone/backend/s3"
 	rcloneFs "github.com/rclone/rclone/fs"
-	rcloneStats "github.com/rclone/rclone/fs/accounting"
 	rcloneConfigmap "github.com/rclone/rclone/fs/config/configmap"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
@@ -46,33 +45,6 @@ var (
 	ErrCreatingTmpDir  = errors.New("error creating tmp dir")
 )
 
-// Downloader wraps src and dst rclone Fs interface types to enable copying objects
-type Downloader struct {
-	vendor string
-	// srcURL is the source URL configured for the src fs
-	srcURL string
-	// dstURL is the destination URL for the dst fs
-	dstURL string
-	// src is the remote file store
-	src rcloneFs.Fs
-	// dst is the destination S3 file store
-	dst    rcloneFs.Fs
-	dstCfg *config.S3Bucket
-	// tmp is a temporary work file store
-	tmp    rcloneFs.Fs
-	logger *logrus.Logger
-}
-
-type S3Downloader struct {
-	vendor string
-	src    rcloneFs.Fs
-	srcCfg *config.S3Bucket
-	dst    rcloneFs.Fs
-	dstCfg *config.S3Bucket
-	tmp    rcloneFs.Fs
-	logger *logrus.Logger
-}
-
 // DownloaderStats includes fields for stats on file/object transfer for Downloader
 type DownloaderStats struct {
 	BytesTransferred   int64
@@ -85,9 +57,7 @@ type LocalFsConfig struct {
 	Root string
 }
 
-func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.S3Bucket, logger *logrus.Logger) (*S3Downloader, error) {
-	var err error
-
+func SetRcloneLogging(logger *logrus.Logger) {
 	switch logger.GetLevel() {
 	case logrus.DebugLevel:
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
@@ -95,84 +65,20 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
 		_ = rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
 	}
-
-	downloader := &S3Downloader{
-		vendor: vendor,
-		srcCfg: srcCfg,
-		dstCfg: dstCfg,
-		logger: logger,
-	}
-
-	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, err
-	}
-
-	downloader.src, err = initS3Fs(ctx, srcCfg, "/")
-	if err != nil {
-		return nil, err
-	}
-
-	downloader.dst, err = initS3Fs(ctx, dstCfg, "/")
-	if err != nil {
-		return nil, err
-	}
-
-	return downloader, nil
 }
 
-// CopyFile wraps rclone CopyFile to copy firmware file from src to dst
-func (s *S3Downloader) CopyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
-	var err error
-
-	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, s.dst, s.DstPath(fw)); exists {
-		s.logger.WithFields(
-			logrus.Fields{
-				"filename": fw.Filename,
-			},
-		).Debug("firmware already exists at dst")
-
-		return nil
-	}
-
-	err = s.VerifyFile(ctx, fw)
-	if err != nil {
-		return err
-	}
-
-	err = rcloneOperations.CopyFile(ctx, s.dst, s.src, s.DstPath(fw), s.SrcPath(fw))
-	if err != nil {
-		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
-			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
-		}
-
-		return errors.Wrap(ErrCopy, err.Error())
-	}
-
-	return nil
-}
-
-func (s *S3Downloader) SrcBucket() string {
-	return s.srcCfg.Bucket
-}
-
-func (s *S3Downloader) DstBucket() string {
-	return s.dstCfg.Bucket
-}
-
-func (s *S3Downloader) SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
+func SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
 	u, _ := url.Parse(fw.UpstreamURL)
 	return u.Path
 }
 
-func (s *S3Downloader) DstPath(fw *serverservice.ComponentFirmwareVersion) string {
-	return path.Join("/firmware", s.vendor, fw.Filename)
+func DstPath(vendor string, fw *serverservice.ComponentFirmwareVersion) string {
+	return path.Join("/firmware", vendor, fw.Filename)
 }
 
-func (s *S3Downloader) VerifyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
+func VerifyFile(ctx context.Context, tmpFs, srcFs rcloneFs.Fs, fw *serverservice.ComponentFirmwareVersion) error {
 	// create local tmp directory
-	tmpDir, err := os.MkdirTemp(s.tmp.Root(), "verify-")
+	tmpDir, err := os.MkdirTemp(tmpFs.Root(), "verify-")
 	if err != nil {
 		return errors.Wrap(ErrCreatingTmpDir, err.Error())
 	}
@@ -180,155 +86,14 @@ func (s *S3Downloader) VerifyFile(ctx context.Context, fw *serverservice.Compone
 	defer os.RemoveAll(tmpDir)
 
 	dstPath := path.Join(path.Base(tmpDir), fw.Filename)
-
-	err = rcloneOperations.CopyFile(ctx, s.tmp, s.src, dstPath, s.SrcPath(fw))
-	if err != nil {
-		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
-			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
-		}
-
-		return errors.Wrap(ErrCopy, err.Error())
-	}
-
-	tmpFilename := path.Join(s.tmp.Root(), dstPath)
-
-	if !ValidateMD5Checksum(tmpFilename, fw.Checksum) {
-		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
-	}
-
-	return nil
-}
-
-// NewDownloader initializes a downloader object based on the srcURL and the given dstCfg
-func NewDownloader(ctx context.Context, vendor, srcURL string, dstCfg *config.S3Bucket, logger *logrus.Logger) (*Downloader, error) {
-	var err error
-
-	switch logger.GetLevel() {
-	case logrus.DebugLevel:
-		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
-	case logrus.TraceLevel:
-		rcloneFs.GetConfig(context.Background()).LogLevel = rcloneFs.LogLevelDebug
-		_ = rcloneFs.GetConfig(context.Background()).Dump.Set("headers")
-	}
-
-	downloader := &Downloader{
-		vendor: vendor,
-		srcURL: srcURL,
-		dstCfg: dstCfg,
-		logger: logger,
-	}
-
-	downloader.dst, err = initS3Fs(ctx, dstCfg, "/")
-	if err != nil {
-		return nil, err
-	}
-
-	// init local tmp fs to generate checksum and signature files
-	downloader.tmp, err = initLocalFs(ctx, &LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, err
-	}
-
-	// init source to download files
-	downloader.src, err = initSource(ctx, srcURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return downloader, nil
-}
-
-// initSource initializes the source URL based on its URL scheme and returns a rclone.Fs with Copy/Sync methods
-func initSource(ctx context.Context, srcURL string) (rcloneFs.Fs, error) {
-	var err error
-
-	var fs rcloneFs.Fs
-
-	if srcURL == "" {
-		return nil, errors.Wrap(ErrSourceURL, "got empty string")
-	}
 
 	switch {
-	case strings.HasPrefix(srcURL, "http://"), strings.HasPrefix(srcURL, "https://"):
-		fs, err = initHTTPFs(ctx, srcURL)
-		if err != nil {
-			return nil, errors.Wrap(ErrInitHTTPDownloader, err.Error())
-		}
-	default:
-		return nil, errors.Wrap(ErrSourceURL, srcURL)
+	case strings.HasPrefix(fw.UpstreamURL, "s3://"):
+		err = rcloneOperations.CopyFile(ctx, tmpFs, srcFs, dstPath, SrcPath(fw))
+	case strings.HasPrefix(fw.UpstreamURL, "http://"), strings.HasPrefix(fw.UpstreamURL, "https://"):
+		_, err = rcloneOperations.CopyURL(ctx, tmpFs, dstPath, fw.UpstreamURL, false, false, false)
 	}
 
-	return fs, err
-}
-
-// DstURL returns the destination URL configured when initializing the downloader
-func (c *Downloader) DstURL() string {
-	return c.dstURL
-}
-
-// SrcURL returns the destination URL configured when initializing the downloader
-func (c *Downloader) SrcURL() string {
-	return c.srcURL
-}
-
-// Stats returns bytes, file transfer stats on the downloader
-func (c *Downloader) Stats() *DownloaderStats {
-	return &DownloaderStats{
-		BytesTransferred:   rcloneStats.GlobalStats().GetBytes(),
-		ObjectsTransferred: rcloneStats.GlobalStats().GetTransfers(),
-		Errors:             rcloneStats.GlobalStats().GetErrors(),
-	}
-}
-
-// SrcName returns the name of the source fs - set in the init*Fs methods
-func (c *Downloader) SrcName() string {
-	return c.src.Name()
-}
-
-// CopyFile copies src firmware in the c.src fs to c.dst fs
-func (c *Downloader) CopyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
-	var err error
-
-	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, c.dst, c.DstPath(fw)); exists {
-		c.logger.WithFields(
-			logrus.Fields{
-				"filename": fw.Filename,
-			},
-		).Debug("firmware already exists at dst")
-
-		return nil
-	}
-
-	err = c.VerifyFile(ctx, fw)
-	if err != nil {
-		return err
-	}
-
-	_, err = rcloneOperations.CopyURL(ctx, c.dst, c.DstPath(fw), c.srcURL, false, false, false)
-	if err != nil {
-		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
-			return errors.Wrap(ErrCopy, err.Error()+" :"+c.srcURL)
-		}
-
-		return errors.Wrap(ErrCopy, err.Error())
-	}
-
-	return nil
-}
-
-func (c *Downloader) VerifyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
-	// create local tmp directory
-	tmpDir, err := os.MkdirTemp(c.tmp.Root(), "verify-")
-	if err != nil {
-		return errors.Wrap(ErrCreatingTmpDir, err.Error())
-	}
-
-	defer os.RemoveAll(tmpDir)
-
-	dstPath := path.Join(path.Base(tmpDir), fw.Filename)
-
-	_, err = rcloneOperations.CopyURL(ctx, c.tmp, dstPath, c.srcURL, false, false, false)
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
@@ -337,43 +102,13 @@ func (c *Downloader) VerifyFile(ctx context.Context, fw *serverservice.Component
 		return errors.Wrap(ErrCopy, err.Error())
 	}
 
-	tmpFilename := path.Join(c.tmp.Root(), dstPath)
-
-	c.logger.WithFields(
-		logrus.Fields{
-			"filename": tmpFilename,
-			"checksum": fw.Checksum,
-		},
-	).Debug("validating file")
+	tmpFilename := path.Join(tmpFs.Root(), dstPath)
 
 	if !ValidateMD5Checksum(tmpFilename, fw.Checksum) {
 		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
 	}
 
 	return nil
-}
-
-func (c *Downloader) DstBucket() string {
-	return c.dstCfg.Bucket
-}
-
-func (c *Downloader) SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
-	u, _ := url.Parse(fw.UpstreamURL)
-	return u.Path
-}
-
-func (c *Downloader) DstPath(fw *serverservice.ComponentFirmwareVersion) string {
-	return path.Join("/firmware", c.vendor, fw.Filename)
-}
-
-// maybe just export the fields directly
-func (c *Downloader) Tmp() rcloneFs.Fs {
-	return c.tmp
-}
-
-// maybe just export the fields directly
-func (c *Downloader) Dst() rcloneFs.Fs {
-	return c.dst
 }
 
 // initHttpFs initializes and returns a rcloneFs.Fs interface that can be used for Copy, Sync operations
@@ -382,7 +117,7 @@ func (c *Downloader) Dst() rcloneFs.Fs {
 // httpURL: the http endpoint which is expected to be the root/top level directory from where files are to be copied from/to
 //
 //	this can be a http index or a URL endpoint from which files are to be downloaded.
-func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
+func InitHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 	// parse the URL into host and path parts, as expected by the rclone fs lib
 	hostPart, pathPart, err := SplitURLPath(httpURL)
 	if err != nil {
@@ -406,7 +141,7 @@ func initHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
 }
 
 // initLocalFs initializes and returns a rcloneFs.Fs interface on the local filesystem
-func initLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
+func InitLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil local fs config")
 	}
@@ -437,7 +172,7 @@ func initLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 // initS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
 //
 // root: the directory mounted as the root/top level directory of the returned fs
-func initS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.Fs, error) {
+func InitS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil s3 config")
 	}

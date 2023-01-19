@@ -10,6 +10,8 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
+	rcloneFs "github.com/rclone/rclone/fs"
+	rcloneOperations "github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -82,14 +84,9 @@ func (a *ASRockRack) Stats() *vendors.Metrics {
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		downloader, err := vendors.NewS3Downloader(ctx, a.vendor, a.srcCfg, a.dstCfg, a.logger)
-		if err != nil {
-			return err
-		}
+		dstPath := vendors.DstPath(a.vendor, fw)
 
-		dstPath := downloader.DstPath(fw)
-
-		dstURL := "s3://" + downloader.DstBucket() + dstPath
+		dstURL := "s3://" + a.dstCfg.Bucket + dstPath
 
 		a.logger.WithFields(
 			logrus.Fields{
@@ -98,10 +95,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			},
 		).Info("sync ASRockRack")
 
-		err = downloader.CopyFile(ctx, fw)
-		// collect metrics from downloader
-		// a.metrics.FromDownloader(downloader, a.config.Vendor, providers.ActionSync)
-
+		err := a.copyFile(ctx, fw)
 		if err != nil {
 			return err
 		}
@@ -110,6 +104,63 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *ASRockRack) initRcloneFs(ctx context.Context, fw *serverservice.ComponentFirmwareVersion, logger *logrus.Logger) (dstFs, tmpFs, srcFs rcloneFs.Fs, err error) {
+	vendors.SetRcloneLogging(logger)
+
+	dstFs, err = vendors.InitS3Fs(ctx, a.dstCfg, "/")
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	tmpFs, err = vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	srcFs, err = vendors.InitS3Fs(ctx, a.srcCfg, "/")
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return dstFs, tmpFs, srcFs, nil
+}
+
+func (a *ASRockRack) copyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
+	var err error
+
+	dstFs, tmpFs, srcFs, err := a.initRcloneFs(ctx, fw, a.logger)
+	if err != nil {
+		return err
+	}
+
+	// In case the file already exists in dst, don't verify/copy it
+	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(a.vendor, fw)); exists {
+		a.logger.WithFields(
+			logrus.Fields{
+				"filename": fw.Filename,
+			},
+		).Debug("firmware already exists at dst")
+
+		return nil
+	}
+
+	err = vendors.VerifyFile(ctx, tmpFs, srcFs, fw)
+	if err != nil {
+		return err
+	}
+
+	err = rcloneOperations.CopyFile(ctx, dstFs, srcFs, vendors.DstPath(a.vendor, fw), vendors.SrcPath(fw))
+	if err != nil {
+		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
+			return errors.Wrap(vendors.ErrCopy, err.Error()+" :"+fw.Filename)
+		}
+
+		return errors.Wrap(vendors.ErrCopy, err.Error())
 	}
 
 	return nil

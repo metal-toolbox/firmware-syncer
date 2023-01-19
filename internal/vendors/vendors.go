@@ -3,8 +3,6 @@ package vendors
 import (
 	"context"
 	"sync"
-
-	"github.com/metal-toolbox/firmware-syncer/internal/metrics"
 )
 
 const (
@@ -59,27 +57,4 @@ func (m *Metrics) Clear() {
 	defer m.mutex.Unlock()
 
 	m.int64Values = make(map[string]int64)
-}
-
-// FromDownloader collects metrics from the given downloader object
-func (m *Metrics) FromDownloader(downloader *Downloader, deviceVendor, actionKind string) {
-	ds := downloader.Stats()
-
-	// metrics returned in Status
-	m.AddInt64Value(MetricTransferredBytes, ds.BytesTransferred)
-	m.AddInt64Value(MetricTransferredObjects, ds.ObjectsTransferred)
-	m.AddInt64Value(MetricErrorsCount, ds.Errors)
-
-	// prometheus metrics
-	metrics.SyncErrorsCounter.With(
-		metrics.UpdateSyncLabels(deviceVendor, actionKind),
-	).Add(float64(ds.Errors))
-
-	metrics.SyncBytesCounter.With(
-		metrics.UpdateSyncLabels(deviceVendor, actionKind),
-	).Add(float64(ds.BytesTransferred))
-
-	metrics.SyncObjectsCounter.With(
-		metrics.UpdateSyncLabels(deviceVendor, actionKind),
-	).Add(float64(ds.ObjectsTransferred))
 }

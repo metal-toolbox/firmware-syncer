@@ -19,6 +19,7 @@ import (
 	rcloneStats "github.com/rclone/rclone/fs/accounting"
 	rcloneConfigmap "github.com/rclone/rclone/fs/config/configmap"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 var (
@@ -121,7 +122,7 @@ func NewS3Downloader(ctx context.Context, vendor string, srcCfg, dstCfg *config.
 }
 
 // CopyFile wraps rclone CopyFile to copy firmware file from src to dst
-func (s *S3Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
+func (s *S3Downloader) CopyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
 	var err error
 
 	// In case the file already exists in dst, don't verify/copy it
@@ -160,16 +161,16 @@ func (s *S3Downloader) DstBucket() string {
 	return s.dstCfg.Bucket
 }
 
-func (s *S3Downloader) SrcPath(fw *config.Firmware) string {
+func (s *S3Downloader) SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
 	u, _ := url.Parse(fw.UpstreamURL)
 	return u.Path
 }
 
-func (s *S3Downloader) DstPath(fw *config.Firmware) string {
+func (s *S3Downloader) DstPath(fw *serverservice.ComponentFirmwareVersion) string {
 	return path.Join("/firmware", s.vendor, fw.Filename)
 }
 
-func (s *S3Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error {
+func (s *S3Downloader) VerifyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
 	// create local tmp directory
 	tmpDir, err := os.MkdirTemp(s.tmp.Root(), "verify-")
 	if err != nil {
@@ -285,7 +286,7 @@ func (c *Downloader) SrcName() string {
 }
 
 // CopyFile copies src firmware in the c.src fs to c.dst fs
-func (c *Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
+func (c *Downloader) CopyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
 	var err error
 
 	// In case the file already exists in dst, don't verify/copy it
@@ -316,7 +317,7 @@ func (c *Downloader) CopyFile(ctx context.Context, fw *config.Firmware) error {
 	return nil
 }
 
-func (c *Downloader) VerifyFile(ctx context.Context, fw *config.Firmware) error {
+func (c *Downloader) VerifyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
 	// create local tmp directory
 	tmpDir, err := os.MkdirTemp(c.tmp.Root(), "verify-")
 	if err != nil {
@@ -356,12 +357,12 @@ func (c *Downloader) DstBucket() string {
 	return c.dstCfg.Bucket
 }
 
-func (c *Downloader) SrcPath(fw *config.Firmware) string {
+func (c *Downloader) SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
 	u, _ := url.Parse(fw.UpstreamURL)
 	return u.Path
 }
 
-func (c *Downloader) DstPath(fw *config.Firmware) string {
+func (c *Downloader) DstPath(fw *serverservice.ComponentFirmwareVersion) string {
 	return path.Join("/firmware", c.vendor, fw.Filename)
 }
 

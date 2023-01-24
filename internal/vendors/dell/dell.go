@@ -11,6 +11,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 const (
@@ -40,36 +42,19 @@ type DUP struct {
 	syncer    *config.Syncer
 	vendor    string
 	dstCfg    *config.S3Bucket
-	firmwares []config.Firmware
+	firmwares []serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func NewDUP(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var dupFirmwares []config.Firmware
-
-	for _, fw := range firmwares {
-		// UpstreamURL required
-		if fw.UpstreamURL == "" {
-			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
-		}
-
-		// Dell DUP files should be passed in with the file sha256 checksum
-		if fw.Utility == UpdateUtilDellDUP && fw.Checksum == "" {
-			return nil, errors.Wrap(config.ErrNoFileChecksum, fw.UpstreamURL)
-		}
-
-		if fw.Utility == UpdateUtilDellDUP {
-			dupFirmwares = append(dupFirmwares, fw)
-		}
-	}
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
 	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
 	if err != nil {
@@ -94,7 +79,7 @@ func NewDUP(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.
 		syncer:    cfgSyncer,
 		vendor:    common.VendorDell,
 		dstCfg:    s3Cfg,
-		firmwares: dupFirmwares,
+		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,

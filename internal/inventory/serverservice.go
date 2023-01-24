@@ -8,7 +8,6 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
@@ -105,29 +104,20 @@ func (s *ServerService) getArtifactsURL(dstURL string) (string, error) {
 }
 
 // Publish adds firmware data to Hollow's ServerService
-func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL string) error {
+func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmwareVersion, dstURL string) error {
 	artifactsURL, err := s.getArtifactsURL(dstURL)
 	if err != nil {
 		return err
 	}
 
-	cfv := serverservice.ComponentFirmwareVersion{
-		Vendor:        vendor,
-		Model:         firmware.Model,
-		Filename:      firmware.Filename,
-		Version:       firmware.Version,
-		Checksum:      firmware.Checksum,
-		UpstreamURL:   firmware.UpstreamURL,
-		RepositoryURL: artifactsURL,
-		Component:     firmware.ComponentSlug,
-	}
+	cfv.RepositoryURL = artifactsURL
 
 	ctx := context.TODO()
 
 	params := serverservice.ComponentFirmwareVersionListParams{
 		Vendor:  vendor,
-		Model:   firmware.Model,
-		Version: firmware.Version,
+		Model:   cfv.Model,
+		Version: cfv.Version,
 	}
 
 	firmwares, _, err := s.client.ListServerComponentFirmware(ctx, &params)
@@ -138,7 +128,7 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 	if len(firmwares) == 0 {
 		var u *uuid.UUID
 
-		u, _, err = s.client.CreateServerComponentFirmware(ctx, cfv)
+		u, _, err = s.client.CreateServerComponentFirmware(ctx, *cfv)
 		if err != nil {
 			return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
 		}
@@ -157,8 +147,8 @@ func (s *ServerService) Publish(vendor string, firmware *config.Firmware, dstURL
 			logrus.Fields{
 				"uuid":    &firmwares[0].UUID,
 				"vendor":  vendor,
-				"model":   firmware.Model,
-				"version": firmware.Version,
+				"model":   cfv.Model,
+				"version": cfv.Version,
 			},
 		).Info("firmware already published")
 

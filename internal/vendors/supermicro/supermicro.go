@@ -21,6 +21,8 @@ import (
 	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
+
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 const (
@@ -30,20 +32,20 @@ const (
 type Supermicro struct {
 	syncer    *config.Syncer
 	vendor    string
-	firmwares []config.Firmware
+	firmwares []serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var smFirmwares []config.Firmware
+	var smFirmwares []serverservice.ComponentFirmwareVersion
 
 	for _, fw := range firmwares {
 		// UpstreamURL required
@@ -51,7 +53,7 @@ func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syn
 			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
 		}
 
-		if fw.Utility == UpdateUtilSupermicro {
+		if fw.Vendor == common.VendorSupermicro {
 			smFirmwares = append(smFirmwares, fw)
 		}
 	}

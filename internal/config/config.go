@@ -13,6 +13,8 @@ import (
 
 	"github.com/bmc-toolbox/common"
 	"gopkg.in/yaml.v2"
+
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 var (
@@ -27,16 +29,6 @@ type Syncer struct {
 	RepositoryRegion    string `yaml:"repositoryRegion"`
 	ArtifactsURL        string `yaml:"artifactsURL"`
 	FirmwareManifestURL string `yaml:"firmwareManifestURL"`
-}
-
-type Firmware struct {
-	Version       string
-	Model         string
-	ComponentSlug string
-	Utility       string
-	UpstreamURL   string
-	Filename      string
-	Checksum      string
 }
 
 // FirmwareRecord from modeldata.json
@@ -83,7 +75,7 @@ func LoadSyncerConfig(configFile string) (*Syncer, error) {
 	return config, nil
 }
 
-func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]Firmware, error) {
+func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]serverservice.ComponentFirmwareVersion, error) {
 	var httpClient = &http.Client{
 		Timeout: time.Second * 15,
 	}
@@ -116,20 +108,19 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 		return nil, err
 	}
 
-	firmwaresByVendor := make(map[string][]Firmware)
+	firmwaresByVendor := make(map[string][]serverservice.ComponentFirmwareVersion)
 
 	for _, m := range models {
 		for component, firmwareRecords := range m.Components {
 			for _, fw := range firmwareRecords {
 				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
-					Firmware{
-						Version:       fw.FirmwareVersion,
-						Model:         strings.ToLower(m.Model),
-						ComponentSlug: strings.ToLower(component),
-						Utility:       getUtility(m.Manufacturer),
-						UpstreamURL:   fw.VendorURI,
-						Filename:      fw.Filename,
-						Checksum:      fw.MD5Sum,
+					serverservice.ComponentFirmwareVersion{
+						Version:     fw.FirmwareVersion,
+						Model:       []string{strings.ToLower(m.Model)},
+						Component:   strings.ToLower(component),
+						UpstreamURL: fw.VendorURI,
+						Filename:    fw.Filename,
+						Checksum:    fw.MD5Sum,
 					})
 			}
 		}

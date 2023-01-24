@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 // ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
 	vendor    string
-	firmwares []config.Firmware
+	firmwares []serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
@@ -28,24 +29,12 @@ type ASRockRack struct {
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	var asrrFirmwares []config.Firmware
-
-	for _, fw := range firmwares {
-		// UpstreamURL required
-		if fw.UpstreamURL == "" {
-			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
-		}
-
-		if fw.Utility == UpdateUtilASRockRack {
-			asrrFirmwares = append(asrrFirmwares, fw)
-		}
-	}
 	// TODO: For now set this configuration from env vars but ideally this should come from
 	// somewhere else. Maybe a per provider config?
 	srcS3Config := &config.S3Bucket{
@@ -78,7 +67,7 @@ func New(ctx context.Context, firmwares []config.Firmware, cfgSyncer *config.Syn
 
 	return &ASRockRack{
 		vendor:    common.VendorAsrockrack,
-		firmwares: asrrFirmwares,
+		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2/clientcredentials"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
@@ -116,7 +117,6 @@ func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmw
 
 	params := serverservice.ComponentFirmwareVersionListParams{
 		Vendor:  vendor,
-		Model:   cfv.Model,
 		Version: cfv.Version,
 	}
 
@@ -143,14 +143,39 @@ func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmw
 	}
 
 	if len(firmwares) == 1 {
-		s.logger.WithFields(
-			logrus.Fields{
-				"uuid":    &firmwares[0].UUID,
-				"vendor":  vendor,
-				"model":   cfv.Model,
-				"version": cfv.Version,
-			},
-		).Info("firmware already published")
+		// check if the firmware already includes this model
+		var update bool
+
+		for _, m := range cfv.Model {
+			if !slices.Contains(firmwares[0].Model, m) {
+				firmwares[0].Model = append(firmwares[0].Model, m)
+				update = true
+			} else {
+				s.logger.WithFields(
+					logrus.Fields{
+						"uuid":    &firmwares[0].UUID,
+						"vendor":  &firmwares[0].Vendor,
+						"model":   cfv.Model,
+						"version": cfv.Version,
+					},
+				).Info("firmware already published for model")
+			}
+		}
+
+		// Submit changed firmware to server service
+		if update {
+			_, err = s.client.UpdateServerComponentFirmware(ctx, firmwares[0].UUID, firmwares[0])
+			if err != nil {
+				return errors.Wrap(ErrServerServiceQuery, "UpdateServerComponentFirmware: "+err.Error())
+			}
+
+			s.logger.WithFields(
+				logrus.Fields{
+					"uuid":  &firmwares[0].UUID,
+					"model": &firmwares[0].Model,
+				},
+			).Info("firmware updated with new models")
+		}
 
 		return nil
 	}

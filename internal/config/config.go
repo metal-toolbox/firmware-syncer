@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bmc-toolbox/common"
 	"gopkg.in/yaml.v2"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
@@ -127,20 +126,6 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 	}
 
 	return firmwaresByVendor, nil
-}
-
-func getUtility(vendor string) string {
-	switch vendor {
-	case common.VendorDell:
-		// for now we only support dup for Dell
-		return "dup"
-	case common.VendorAsrockrack:
-		return "asrrmgnttool"
-	case common.VendorSupermicro:
-		return "sum"
-	}
-
-	return ""
 }
 
 func ParseRepositoryURL(repositoryURL string) (endpoint, bucket string, err error) {

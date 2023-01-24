@@ -32,30 +32,17 @@ const (
 type Supermicro struct {
 	syncer    *config.Syncer
 	vendor    string
-	firmwares []serverservice.ComponentFirmwareVersion
+	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
-	var smFirmwares []serverservice.ComponentFirmwareVersion
-
-	for _, fw := range firmwares {
-		// UpstreamURL required
-		if fw.UpstreamURL == "" {
-			return nil, errors.Wrap(config.ErrProviderAttributes, "UpstreamURL not defined for: "+fw.Filename)
-		}
-
-		if fw.Vendor == common.VendorSupermicro {
-			smFirmwares = append(smFirmwares, fw)
-		}
 	}
 
 	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
@@ -81,7 +68,7 @@ func New(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion
 	return &Supermicro{
 		syncer:    cfgSyncer,
 		vendor:    common.VendorSupermicro,
-		firmwares: smFirmwares,
+		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,
@@ -122,7 +109,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		}
 
 		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(&fw)); exists {
+		if exists, _ := fs.FileExists(ctx, downloader.Dst(), downloader.DstPath(fw)); exists {
 			s.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -167,14 +154,14 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		s.logger.WithFields(
 			logrus.Fields{
 				"src": fwFile.Name(),
-				"dst": downloader.DstPath(&fw),
+				"dst": downloader.DstPath(fw),
 			},
 		).Info("Sync Supermicro")
 
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
 		tmpFwPath := strings.Replace(fwFile.Name(), downloader.Tmp().Root(), "", 1)
 
-		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(&fw), tmpFwPath)
+		err = operations.CopyFile(ctx, downloader.Dst(), downloader.Tmp(), downloader.DstPath(fw), tmpFwPath)
 		if err != nil {
 			return err
 		}
@@ -182,7 +169,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		// Clean up tmpDir after copying the extracted firmware to dst.
 		os.RemoveAll(tmpDir)
 
-		err = s.inventory.Publish(s.vendor, &fw, downloader.DstPath(&fw))
+		err = s.inventory.Publish(s.vendor, fw, downloader.DstPath(fw))
 		if err != nil {
 			return err
 		}

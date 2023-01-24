@@ -74,7 +74,7 @@ func LoadSyncerConfig(configFile string) (*Syncer, error) {
 	return config, nil
 }
 
-func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]serverservice.ComponentFirmwareVersion, error) {
+func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]*serverservice.ComponentFirmwareVersion, error) {
 	var httpClient = &http.Client{
 		Timeout: time.Second * 15,
 	}
@@ -107,13 +107,13 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 		return nil, err
 	}
 
-	firmwaresByVendor := make(map[string][]serverservice.ComponentFirmwareVersion)
+	firmwaresByVendor := make(map[string][]*serverservice.ComponentFirmwareVersion)
 
 	for _, m := range models {
 		for component, firmwareRecords := range m.Components {
 			for _, fw := range firmwareRecords {
 				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
-					serverservice.ComponentFirmwareVersion{
+					&serverservice.ComponentFirmwareVersion{
 						Version:     fw.FirmwareVersion,
 						Model:       []string{strings.ToLower(m.Model)},
 						Component:   strings.ToLower(component),

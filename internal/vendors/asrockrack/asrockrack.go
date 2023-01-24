@@ -21,7 +21,7 @@ const (
 // ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
 	vendor    string
-	firmwares []serverservice.ComponentFirmwareVersion
+	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
 	inventory *inventory.ServerService
@@ -29,7 +29,7 @@ type ASRockRack struct {
 	dstCfg    *config.S3Bucket
 }
 
-func New(ctx context.Context, firmwares []serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -87,7 +87,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		dstPath := downloader.DstPath(&fw)
+		dstPath := downloader.DstPath(fw)
 
 		dstURL := "s3://" + downloader.DstBucket() + dstPath
 
@@ -98,7 +98,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			},
 		).Info("sync ASRockRack")
 
-		err = downloader.CopyFile(ctx, &fw)
+		err = downloader.CopyFile(ctx, fw)
 		// collect metrics from downloader
 		// a.metrics.FromDownloader(downloader, a.config.Vendor, providers.ActionSync)
 
@@ -106,7 +106,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(a.vendor, &fw, dstURL)
+		err = a.inventory.Publish(a.vendor, fw, dstURL)
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 			return err
 		}
 
-		dstPath := downloader.DstPath(&fw)
+		dstPath := downloader.DstPath(fw)
 		dstURL := "s3://" + downloader.DstBucket() + dstPath
 
 		d.logger.WithFields(
@@ -36,7 +36,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 			},
 		).Info("sync DUP")
 
-		err = downloader.CopyFile(ctx, &fw)
+		err = downloader.CopyFile(ctx, fw)
 		// collect metrics from downloader
 		d.metrics.FromDownloader(downloader, d.vendor, vendors.ActionSync)
 
@@ -44,7 +44,7 @@ func (d *DUP) syncDUPFiles(ctx context.Context) error {
 			return err
 		}
 
-		err = d.inventory.Publish(d.vendor, &fw, dstURL)
+		err = d.inventory.Publish(d.vendor, fw, dstURL)
 		if err != nil {
 			return err
 		}

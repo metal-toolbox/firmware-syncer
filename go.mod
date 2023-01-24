@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rclone/rclone v1.61.1
 	github.com/stretchr/testify v1.8.1
-	go.hollow.sh/serverservice v0.15.0
+	go.hollow.sh/serverservice v0.15.1-0.20230123170747-395ab61d4872
 	golang.org/x/oauth2 v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -94,8 +94,10 @@ require (
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/ugorji/go/codec v1.2.8 // indirect
 	github.com/volatiletech/inflect v0.0.1 // indirect
+	github.com/volatiletech/null v8.0.0+incompatible // indirect
 	github.com/volatiletech/null/v8 v8.1.2 // indirect
 	github.com/volatiletech/randomize v0.0.1 // indirect
+	github.com/volatiletech/sqlboiler v3.7.1+incompatible // indirect
 	github.com/volatiletech/sqlboiler/v4 v4.14.0 // indirect
 	github.com/volatiletech/strmangle v0.0.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect

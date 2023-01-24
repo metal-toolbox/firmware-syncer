@@ -114,6 +114,7 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 			for _, fw := range firmwareRecords {
 				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
 					&serverservice.ComponentFirmwareVersion{
+						Vendor:      strings.ToLower(m.Manufacturer),
 						Version:     fw.FirmwareVersion,
 						Model:       []string{strings.ToLower(m.Model)},
 						Component:   strings.ToLower(component),

@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -17,32 +16,9 @@ import (
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-const (
-	UpdateUtilDellDUP = "dup" // Dell Update Package
-)
-
-// This provider syncs updates from the Dell firmware repository
-//
-// Dell provider can be of two types DSU or DUP.
-//
-// DSU repositories contain a metadata file - the primary.xml.gz file, which includes the SHA checksums for each RPM package,
-// this file is checksum'd and signed as primary.xml.gz.sha256, primary.xml.gz.sha256.sig
-//
-// DUP files are retrieved into the filestore, checksummed and signed by themselves.
-//
-//
-// Its often the case that the upstream is unavailable or has incorrect repodata
-// and hence the sync is based on the checksum and sig files being present,
-// instead of attempting to compare all the files each time.
-//
-//
-// Updates files end up in the configured filestore under a directory structure determined by the
-// hardware vendor, model, component slug and update filename (if any)
-
 // DUP implements the Vendor interface methods to retrieve dell DUP firmware files
 type DUP struct {
 	syncer    *config.Syncer
-	vendor    string
 	dstCfg    *config.S3Bucket
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
@@ -79,7 +55,6 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 
 	return &DUP{
 		syncer:    cfgSyncer,
-		vendor:    common.VendorDell,
 		dstCfg:    s3Cfg,
 		firmwares: firmwares,
 		logger:    logger,
@@ -117,7 +92,7 @@ func (d *DUP) initRcloneFs(ctx context.Context, fw *serverservice.ComponentFirmw
 
 func (d *DUP) Sync(ctx context.Context) error {
 	for _, fw := range d.firmwares {
-		dstPath := vendors.DstPath(d.vendor, fw)
+		dstPath := vendors.DstPath(fw)
 		dstURL := "s3://" + d.dstCfg.Bucket + dstPath
 
 		d.logger.WithFields(
@@ -132,7 +107,7 @@ func (d *DUP) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = d.inventory.Publish(d.vendor, fw, dstURL)
+		err = d.inventory.Publish(fw, dstURL)
 		if err != nil {
 			return err
 		}
@@ -150,7 +125,7 @@ func (d *DUP) copyFile(ctx context.Context, fw *serverservice.ComponentFirmwareV
 	}
 
 	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(d.vendor, fw)); exists {
+	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(fw)); exists {
 		d.logger.WithFields(
 			logrus.Fields{
 				"filename": fw.Filename,
@@ -165,7 +140,7 @@ func (d *DUP) copyFile(ctx context.Context, fw *serverservice.ComponentFirmwareV
 		return err
 	}
 
-	_, err = rcloneOperations.CopyURL(ctx, dstFs, vendors.DstPath(d.vendor, fw), fw.UpstreamURL, false, false, false)
+	_, err = rcloneOperations.CopyURL(ctx, dstFs, vendors.DstPath(fw), fw.UpstreamURL, false, false, false)
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(vendors.ErrCopy, err.Error()+" :"+fw.UpstreamURL)

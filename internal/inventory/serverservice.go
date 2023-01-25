@@ -106,7 +106,7 @@ func (s *ServerService) getArtifactsURL(dstURL string) (string, error) {
 
 // nolint:gocyclo // silence cyclo warning
 // Publish adds firmware data to Hollow's ServerService
-func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmwareVersion, dstURL string) error {
+func (s *ServerService) Publish(cfv *serverservice.ComponentFirmwareVersion, dstURL string) error {
 	artifactsURL, err := s.getArtifactsURL(dstURL)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (s *ServerService) Publish(vendor string, cfv *serverservice.ComponentFirmw
 	ctx := context.TODO()
 
 	params := serverservice.ComponentFirmwareVersionListParams{
-		Vendor:  vendor,
+		Vendor:  cfv.Vendor,
 		Version: cfv.Version,
 	}
 

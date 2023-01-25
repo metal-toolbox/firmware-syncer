@@ -72,8 +72,8 @@ func SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
 	return u.Path
 }
 
-func DstPath(vendor string, fw *serverservice.ComponentFirmwareVersion) string {
-	return path.Join("/firmware", vendor, fw.Filename)
+func DstPath(fw *serverservice.ComponentFirmwareVersion) string {
+	return path.Join("/firmware", fw.Vendor, fw.Filename)
 }
 
 func VerifyFile(ctx context.Context, tmpFs, srcFs rcloneFs.Fs, fw *serverservice.ComponentFirmwareVersion) error {

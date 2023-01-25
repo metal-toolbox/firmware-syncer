@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -25,13 +24,8 @@ import (
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-const (
-	UpdateUtilSupermicro = "sum"
-)
-
 type Supermicro struct {
 	syncer    *config.Syncer
-	vendor    string
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
@@ -67,7 +61,6 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 
 	return &Supermicro{
 		syncer:    cfgSyncer,
-		vendor:    common.VendorSupermicro,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
@@ -125,7 +118,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		}
 
 		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, dstFs, vendors.DstPath(s.vendor, fw)); exists {
+		if exists, _ := fs.FileExists(ctx, dstFs, vendors.DstPath(fw)); exists {
 			s.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -170,14 +163,14 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		s.logger.WithFields(
 			logrus.Fields{
 				"src": fwFile.Name(),
-				"dst": vendors.DstPath(s.vendor, fw),
+				"dst": vendors.DstPath(fw),
 			},
 		).Info("Sync Supermicro")
 
 		// Remove root of tmpdir from filename since CopyFile doesn't use it
 		tmpFwPath := strings.Replace(fwFile.Name(), tmpFs.Root(), "", 1)
 
-		err = operations.CopyFile(ctx, dstFs, tmpFs, vendors.DstPath(s.vendor, fw), tmpFwPath)
+		err = operations.CopyFile(ctx, dstFs, tmpFs, vendors.DstPath(fw), tmpFwPath)
 		if err != nil {
 			return err
 		}
@@ -185,7 +178,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 		// Clean up tmpDir after copying the extracted firmware to dst.
 		os.RemoveAll(tmpDir)
 
-		err = s.inventory.Publish(s.vendor, fw, vendors.DstPath(s.vendor, fw))
+		err = s.inventory.Publish(fw, vendors.DstPath(fw))
 		if err != nil {
 			return err
 		}

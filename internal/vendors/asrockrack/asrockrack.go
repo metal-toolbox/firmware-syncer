@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
@@ -16,13 +15,8 @@ import (
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-const (
-	UpdateUtilASRockRack = "asrrmgnttool"
-)
-
 // ASRockRack implements the Vendor interface methods to retrieve ASRockRack firmware files
 type ASRockRack struct {
-	vendor    string
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
@@ -68,7 +62,6 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	}
 
 	return &ASRockRack{
-		vendor:    common.VendorAsrockrack,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
@@ -84,7 +77,7 @@ func (a *ASRockRack) Stats() *vendors.Metrics {
 
 func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
-		dstPath := vendors.DstPath(a.vendor, fw)
+		dstPath := vendors.DstPath(fw)
 
 		dstURL := "s3://" + a.dstCfg.Bucket + dstPath
 
@@ -100,7 +93,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(a.vendor, fw, dstURL)
+		err = a.inventory.Publish(fw, dstURL)
 		if err != nil {
 			return err
 		}
@@ -139,7 +132,7 @@ func (a *ASRockRack) copyFile(ctx context.Context, fw *serverservice.ComponentFi
 	}
 
 	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(a.vendor, fw)); exists {
+	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(fw)); exists {
 		a.logger.WithFields(
 			logrus.Fields{
 				"filename": fw.Filename,
@@ -154,7 +147,7 @@ func (a *ASRockRack) copyFile(ctx context.Context, fw *serverservice.ComponentFi
 		return err
 	}
 
-	err = rcloneOperations.CopyFile(ctx, dstFs, srcFs, vendors.DstPath(a.vendor, fw), vendors.SrcPath(fw))
+	err = rcloneOperations.CopyFile(ctx, dstFs, srcFs, vendors.DstPath(fw), vendors.SrcPath(fw))
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(vendors.ErrCopy, err.Error()+" :"+fw.Filename)

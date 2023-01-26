@@ -23,6 +23,9 @@ type ASRockRack struct {
 	inventory *inventory.ServerService
 	srcCfg    *config.S3Bucket
 	dstCfg    *config.S3Bucket
+	srcFs     rcloneFs.Fs
+	dstFs     rcloneFs.Fs
+	tmpFs     rcloneFs.Fs
 }
 
 func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
@@ -61,6 +64,24 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		return nil, err
 	}
 
+	// init rclone filesystems for tmp, dst and src files
+	vendors.SetRcloneLogging(logger)
+
+	dstFs, err := vendors.InitS3Fs(ctx, dstS3Config, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	srcFs, err := vendors.InitS3Fs(ctx, srcS3Config, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
+	if err != nil {
+		return nil, err
+	}
+
 	return &ASRockRack{
 		firmwares: firmwares,
 		logger:    logger,
@@ -68,6 +89,9 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		inventory: i,
 		srcCfg:    srcS3Config,
 		dstCfg:    dstS3Config,
+		srcFs:     srcFs,
+		dstFs:     dstFs,
+		tmpFs:     tmpFs,
 	}, nil
 }
 
@@ -88,7 +112,25 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			},
 		).Info("sync ASRockRack")
 
-		err := a.copyFile(ctx, fw)
+		// In case the file already exists in dst, don't verify/copy it
+		if exists, _ := rcloneFs.FileExists(ctx, a.dstFs, vendors.DstPath(fw)); exists {
+			a.logger.WithFields(
+				logrus.Fields{
+					"filename": fw.Filename,
+				},
+			).Debug("firmware already exists at dst")
+
+			continue
+		}
+
+		// verify file checksum
+		err := vendors.VerifyFile(ctx, a.tmpFs, a.srcFs, fw)
+		if err != nil {
+			return err
+		}
+
+		// copy file to dst
+		err = a.copyFile(ctx, fw)
 		if err != nil {
 			return err
 		}
@@ -102,52 +144,8 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 	return nil
 }
 
-func (a *ASRockRack) initRcloneFs(ctx context.Context, fw *serverservice.ComponentFirmwareVersion, logger *logrus.Logger) (dstFs, tmpFs, srcFs rcloneFs.Fs, err error) {
-	vendors.SetRcloneLogging(logger)
-
-	dstFs, err = vendors.InitS3Fs(ctx, a.dstCfg, "/")
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	tmpFs, err = vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	srcFs, err = vendors.InitS3Fs(ctx, a.srcCfg, "/")
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return dstFs, tmpFs, srcFs, nil
-}
-
 func (a *ASRockRack) copyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
-	var err error
-
-	dstFs, tmpFs, srcFs, err := a.initRcloneFs(ctx, fw, a.logger)
-	if err != nil {
-		return err
-	}
-
-	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(fw)); exists {
-		a.logger.WithFields(
-			logrus.Fields{
-				"filename": fw.Filename,
-			},
-		).Debug("firmware already exists at dst")
-
-		return nil
-	}
-
-	err = vendors.VerifyFile(ctx, tmpFs, srcFs, fw)
-	if err != nil {
-		return err
-	}
-
-	err = rcloneOperations.CopyFile(ctx, dstFs, srcFs, vendors.DstPath(fw), vendors.SrcPath(fw))
+	err := rcloneOperations.CopyFile(ctx, a.dstFs, a.srcFs, vendors.DstPath(fw), vendors.SrcPath(fw))
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(vendors.ErrCopy, err.Error()+" :"+fw.Filename)

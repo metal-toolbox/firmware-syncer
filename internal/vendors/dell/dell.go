@@ -20,6 +20,8 @@ import (
 type DUP struct {
 	syncer    *config.Syncer
 	dstCfg    *config.S3Bucket
+	dstFs     rcloneFs.Fs
+	tmpFs     rcloneFs.Fs
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
@@ -53,9 +55,24 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 		return nil, err
 	}
 
+	// init rclone filesystems for tmp and dst files
+	vendors.SetRcloneLogging(logger)
+
+	dstFs, err := vendors.InitS3Fs(ctx, s3Cfg, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
+	if err != nil {
+		return nil, err
+	}
+
 	return &DUP{
 		syncer:    cfgSyncer,
 		dstCfg:    s3Cfg,
+		dstFs:     dstFs,
+		tmpFs:     tmpFs,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
@@ -66,28 +83,6 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 // Stats implements the Syncer interface to return metrics collected on Object, byte transfer stats
 func (d *DUP) Stats() *vendors.Metrics {
 	return d.metrics
-}
-
-func (d *DUP) initRcloneFs(ctx context.Context, fw *serverservice.ComponentFirmwareVersion, logger *logrus.Logger) (dstFs, tmpFs, srcFs rcloneFs.Fs, err error) {
-	vendors.SetRcloneLogging(logger)
-
-	dstFs, err = vendors.InitS3Fs(ctx, d.dstCfg, "/")
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	tmpFs, err = vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// init source to download files
-	srcFs, err = vendors.InitHTTPFs(ctx, fw.UpstreamURL)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return dstFs, tmpFs, srcFs, nil
 }
 
 func (d *DUP) Sync(ctx context.Context) error {
@@ -102,7 +97,31 @@ func (d *DUP) Sync(ctx context.Context) error {
 			},
 		).Info("sync DUP")
 
-		err := d.copyFile(ctx, fw)
+		// In case the file already exists in dst, don't verify/copy it
+		if exists, _ := rcloneFs.FileExists(ctx, d.dstFs, vendors.DstPath(fw)); exists {
+			d.logger.WithFields(
+				logrus.Fields{
+					"filename": fw.Filename,
+				},
+			).Debug("firmware already exists at dst")
+
+			continue
+		}
+
+		// init src rclone filesystem
+		srcFs, err := d.initSrcFs(ctx, fw)
+		if err != nil {
+			return err
+		}
+
+		// Verify file checksum
+		err = vendors.VerifyFile(ctx, d.tmpFs, srcFs, fw)
+		if err != nil {
+			return err
+		}
+
+		// Copy file to dst
+		err = d.copyFile(ctx, fw)
 		if err != nil {
 			return err
 		}
@@ -116,31 +135,20 @@ func (d *DUP) Sync(ctx context.Context) error {
 	return nil
 }
 
+func (d *DUP) initSrcFs(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) (srcFs rcloneFs.Fs, err error) {
+	// init source to download files
+	srcFs, err = vendors.InitHTTPFs(ctx, fw.UpstreamURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return srcFs, err
+}
+
 func (d *DUP) copyFile(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
 	var err error
 
-	dstFs, tmpFs, srcFs, err := d.initRcloneFs(ctx, fw, d.logger)
-	if err != nil {
-		return err
-	}
-
-	// In case the file already exists in dst, don't verify/copy it
-	if exists, _ := rcloneFs.FileExists(ctx, dstFs, vendors.DstPath(fw)); exists {
-		d.logger.WithFields(
-			logrus.Fields{
-				"filename": fw.Filename,
-			},
-		).Debug("firmware already exists at dst")
-
-		return nil
-	}
-
-	err = vendors.VerifyFile(ctx, tmpFs, srcFs, fw)
-	if err != nil {
-		return err
-	}
-
-	_, err = rcloneOperations.CopyURL(ctx, dstFs, vendors.DstPath(fw), fw.UpstreamURL, false, false, false)
+	_, err = rcloneOperations.CopyURL(ctx, d.dstFs, vendors.DstPath(fw), fw.UpstreamURL, false, false, false)
 	if err != nil {
 		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
 			return errors.Wrap(vendors.ErrCopy, err.Error()+" :"+fw.UpstreamURL)

@@ -107,7 +107,7 @@ func (d *DUP) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = d.inventory.Publish(fw, dstURL)
+		err = d.inventory.Publish(ctx, fw, dstURL)
 		if err != nil {
 			return err
 		}

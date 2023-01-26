@@ -93,7 +93,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(fw, dstURL)
+		err = a.inventory.Publish(ctx, fw, dstURL)
 		if err != nil {
 			return err
 		}

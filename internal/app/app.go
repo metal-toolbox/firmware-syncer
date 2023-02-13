@@ -11,6 +11,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/mellanox"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
 )
 
@@ -91,6 +92,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			fwVendors = append(fwVendors, sm)
+		case common.VendorMellanox:
+			var mlx vendors.Vendor
+
+			mlx, err = mellanox.New(context.TODO(), firmwares, cfgSyncer, logger)
+			if err != nil {
+				logger.Error("Failed to initialize Mellanox vendor: " + err.Error())
+				return nil, err
+			}
+
+			fwVendors = append(fwVendors, mlx)
 		default:
 			logger.Error("Vendor not supported: " + vendor)
 			continue

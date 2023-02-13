@@ -41,6 +41,7 @@ jobs:
       run: make build-linux
 
     - uses: actions/upload-artifact@v3
+      if: ( contains(github.ref, 'tags') && ! contains(github.ref, 'staging') )
       with:
         name: firmware-syncer-artifacts
         path: |

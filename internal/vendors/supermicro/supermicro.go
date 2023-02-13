@@ -1,15 +1,12 @@
 package supermicro
 
 import (
-	"archive/zip"
 	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -131,7 +128,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 
 		s.logger.Debug("Downloading archive")
 
-		archivePath, err := downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum)
+		archivePath, err := vendors.DownloadFirmwareArchive(ctx, tmpDir, archiveURL, archiveChecksum)
 		if err != nil {
 			return err
 		}
@@ -144,7 +141,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 
 		s.logger.Debug("Extracting firmware from archive")
 
-		fwFile, err := extractFirmware(archivePath, fw.Filename, fw.Checksum)
+		fwFile, err := vendors.ExtractFirmware(archivePath, fw.Filename, fw.Checksum)
 		if err != nil {
 			return err
 		}
@@ -180,91 +177,6 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func downloadFirmwareArchive(tmpDir, archiveURL, archiveChecksum string) (string, error) {
-	zipArchivePath := path.Join(tmpDir, filepath.Base(archiveURL))
-
-	out, err := os.Create(zipArchivePath)
-	if err != nil {
-		return "", err
-	}
-
-	err = operations.CopyURLToWriter(context.Background(), archiveURL, out)
-	if err != nil {
-		return "", err
-	}
-
-	if !vendors.ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
-		return "", errors.Wrap(vendors.ErrChecksumValidate, fmt.Sprintf("zipArchivePath: %s, expected checksum: %s", zipArchivePath, archiveChecksum))
-	}
-
-	return zipArchivePath, nil
-}
-
-// extractFirmware extracts the given firmareFilename from archivePath and checks if MD5 checksum matches.
-// nolint:gocyclo // see Test_extractFirmware for examples of zip archives found in the wild.
-func extractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*os.File, error) {
-	r, err := zip.OpenReader(archivePath)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-
-	var foundFile *zip.File
-
-	fwFilenameNoExt := strings.Replace(firmwareFilename, filepath.Ext(firmwareFilename), "", 1)
-	for _, f := range r.File {
-		if filepath.Ext(f.Name) == ".zip" && strings.Contains(f.Name, fwFilenameNoExt) {
-			foundFile = f
-			// Skip checksum verification on the nested zip archive,
-			// since we don't have a checksum for it.
-			firmwareChecksum = ""
-
-			break
-		}
-
-		if strings.HasSuffix(f.Name, firmwareFilename) {
-			foundFile = f
-			break
-		}
-	}
-
-	if foundFile == nil {
-		return nil, errors.New(fmt.Sprintf("couldn't find file: %s in archive: %s", firmwareFilename, archivePath))
-	}
-
-	zipContents, err := foundFile.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer zipContents.Close()
-
-	tmpDir := path.Dir(archivePath)
-	tmpFilename := filepath.Base(foundFile.Name)
-
-	out, err := os.Create(path.Join(tmpDir, tmpFilename))
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = io.Copy(out, zipContents)
-	if err != nil {
-		return nil, err
-	}
-
-	if filepath.Ext(out.Name()) == ".zip" {
-		out, err = extractFirmware(out.Name(), firmwareFilename, firmwareChecksum)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if firmwareChecksum != "" && !vendors.ValidateMD5Checksum(out.Name(), firmwareChecksum) {
-		return nil, errors.Wrap(vendors.ErrChecksumValidate, fmt.Sprintf("firmware: %s, expected checksum: %s", out.Name(), firmwareChecksum))
-	}
-
-	return out, nil
 }
 
 func getArchiveURLAndChecksum(ctx context.Context, id string) (url, checksum string, err error) {

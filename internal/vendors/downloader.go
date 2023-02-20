@@ -284,9 +284,9 @@ func DownloadFirmwareArchive(ctx context.Context, tmpDir, archiveURL, archiveChe
 	return zipArchivePath, nil
 }
 
-// extractFirmware extracts the given firmareFilename from archivePath and checks if MD5 checksum matches.
-// nolint:gocyclo // see Test_extractFirmware for examples of zip archives found in the wild.
-func ExtractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*os.File, error) {
+// ExtractFromZipArchive extracts the given firmareFilename from zip archivePath and checks if MD5 checksum matches.
+// nolint:gocyclo // see Test_ExtractFromZipArchive for examples of zip archives found in the wild.
+func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum string) (*os.File, error) {
 	r, err := zip.OpenReader(archivePath)
 	if err != nil {
 		return nil, err
@@ -336,7 +336,7 @@ func ExtractFirmware(archivePath, firmwareFilename, firmwareChecksum string) (*o
 	}
 
 	if filepath.Ext(out.Name()) == ".zip" {
-		out, err = ExtractFirmware(out.Name(), firmwareFilename, firmwareChecksum)
+		out, err = ExtractFromZipArchive(out.Name(), firmwareFilename, firmwareChecksum)
 		if err != nil {
 			return nil, err
 		}

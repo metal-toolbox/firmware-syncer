@@ -141,7 +141,7 @@ func (s *Supermicro) Sync(ctx context.Context) error {
 
 		s.logger.Debug("Extracting firmware from archive")
 
-		fwFile, err := vendors.ExtractFirmware(archivePath, fw.Filename, fw.Checksum)
+		fwFile, err := vendors.ExtractFromZipArchive(archivePath, fw.Filename, fw.Checksum)
 		if err != nil {
 			return err
 		}

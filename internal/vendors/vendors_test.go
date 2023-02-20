@@ -54,7 +54,7 @@ func Test_TransferMetrics(t *testing.T) {
 	}
 }
 
-func Test_ExtractFirmware(t *testing.T) {
+func Test_ExtractFromZipArchive(t *testing.T) {
 	cases := []struct {
 		name             string
 		archivePath      string
@@ -96,7 +96,7 @@ func Test_ExtractFirmware(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := ExtractFirmware(tc.archivePath, tc.firmwareFilename, tc.firmwareChecksum)
+			f, err := ExtractFromZipArchive(tc.archivePath, tc.firmwareFilename, tc.firmwareChecksum)
 			if err != nil {
 				assert.EqualError(t, err, "some error")
 				return

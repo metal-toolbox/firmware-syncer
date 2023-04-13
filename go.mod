@@ -14,29 +14,29 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rclone/rclone v1.61.1
+	github.com/rclone/rclone v1.62.2
 	github.com/stretchr/testify v1.8.2
 	go.hollow.sh/serverservice v0.15.1
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-	golang.org/x/oauth2 v0.5.0
+	golang.org/x/oauth2 v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	github.com/Max-Sum/base32768 v0.0.0-20191205131208-7937843c71d5 // indirect
+	github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd // indirect
 	github.com/abbot/go-http-auth v0.4.0 // indirect
-	github.com/aws/aws-sdk-go v1.44.156 // indirect
+	github.com/aws/aws-sdk-go v1.44.218 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/cockroach-go/v2 v2.2.20 // indirect
-	github.com/coreos/go-semver v0.3.0 // indirect
+	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ericlagergren/decimal v0.0.0-20221120152707-495c53812d05 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.8.2 // indirect
-	github.com/go-chi/chi/v5 v5.0.7 // indirect
+	github.com/go-chi/chi/v5 v5.0.8 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -84,7 +84,7 @@ require (
 	github.com/prometheus/common v0.39.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rfjakob/eme v1.1.2 // indirect
-	github.com/shirou/gopsutil/v3 v3.22.11 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.2 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -105,18 +105,18 @@ require (
 	go.hollow.sh/toolbox v0.4.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	gocloud.dev v0.27.0 // indirect
-	golang.org/x/crypto v0.4.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/api v0.105.0 // indirect
+	google.golang.org/api v0.112.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
-	google.golang.org/grpc v1.51.0 // indirect
+	google.golang.org/genproto v0.0.0-20230303212802-e74f57abe488 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect

@@ -11,6 +11,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/intel"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/mellanox"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
 )
@@ -102,6 +103,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			fwVendors = append(fwVendors, mlx)
+		case common.VendorIntel:
+			var i vendors.Vendor
+
+			i, err = intel.New(context.TODO(), firmwares, cfgSyncer, logger)
+			if err != nil {
+				logger.Error("Failed to initialize Intel vendor: " + err.Error())
+				return nil, err
+			}
+
+			fwVendors = append(fwVendors, i)
 		default:
 			logger.Error("Vendor not supported: " + vendor)
 			continue

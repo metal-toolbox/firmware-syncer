@@ -81,6 +81,10 @@ func (i *Intel) Stats() *vendors.Metrics {
 	return i.metrics
 }
 
+// Sync copies firmware files from Intel and publishes to ServerService
+// Initially only supports network card firmware for a given NIC family (e.g. E810, X710)
+// Each NIC family may have multiple firmware binaries that applies to specific models within the family.
+// The NVM update utility is also provided in the tarball downloaded and extracted from the zip archive.
 func (i *Intel) Sync(ctx context.Context) error {
 	for _, fw := range i.firmwares {
 		// In case the file already exists in dst, don't copy it

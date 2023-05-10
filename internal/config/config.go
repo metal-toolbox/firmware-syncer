@@ -38,6 +38,7 @@ type FirmwareRecord struct {
 	Latest          bool   `json:"latest"`
 	MD5Sum          string `json:"md5sum"`
 	VendorURI       string `json:"vendor_uri"`
+	Model           string `json:"model,omitempty"`
 	// intentionally ignoring preerequisite field in modeldata.json
 	// because sometimes it's a bool (false) or a string with the prerequisite
 }
@@ -112,11 +113,16 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 	for _, m := range models {
 		for component, firmwareRecords := range m.Components {
 			for _, fw := range firmwareRecords {
+				cModels := []string{strings.ToLower(m.Model)}
+				if fw.Model != "" {
+					cModels = append(cModels, strings.ToLower(fw.Model))
+				}
+
 				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
 					&serverservice.ComponentFirmwareVersion{
 						Vendor:      strings.ToLower(m.Manufacturer),
 						Version:     fw.FirmwareVersion,
-						Model:       []string{strings.ToLower(m.Model)},
+						Model:       cModels,
 						Component:   strings.ToLower(component),
 						UpstreamURL: fw.VendorURI,
 						Filename:    fw.Filename,

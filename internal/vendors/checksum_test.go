@@ -142,3 +142,45 @@ func Test_SHA256ChecksumValidate(t *testing.T) {
 		assert.Nil(t, err)
 	}
 }
+
+func Test_ValidateChecksum(t *testing.T) {
+	testfile := "/tmp/foo.blah"
+	cases := []struct {
+		name     string
+		filename string
+		checksum string
+	}{
+		{
+			"nohint",
+			testfile,
+			"803ac72f8be2eba9f985fd3be31b506c",
+		},
+		{
+			"sha256",
+			testfile,
+			"sha256:97e9269cd0514f864e6be9157998464c94776ebc7f669b449f581abdad4035f5",
+		},
+		{
+			"md5sum",
+			testfile,
+			"md5sum:803ac72f8be2eba9f985fd3be31b506c",
+		},
+	}
+
+	for _, tt := range cases {
+		_, err := os.Create(tt.filename)
+		if err != nil {
+			t.Error(err)
+		}
+
+		err = os.WriteFile(testfile, []byte(`checksum this`), 0o0600)
+		if err != nil {
+			t.Error(err)
+		}
+
+		// nolint:gocritic
+		defer os.Remove(tt.filename)
+
+		assert.True(t, ValidateChecksum(tt.filename, tt.checksum))
+	}
+}

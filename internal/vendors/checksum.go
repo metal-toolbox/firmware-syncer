@@ -95,7 +95,12 @@ func SHA256ChecksumValidate(filename, checksum string) error {
 	return nil
 }
 
-func ValidateMD5Checksum(filename, checksum string) bool {
+func validateSHA256Checksum(filename, checksum string) bool {
+	err := SHA256ChecksumValidate(filename, checksum)
+	return err == nil
+}
+
+func validateMD5Checksum(filename, checksum string) bool {
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -111,4 +116,27 @@ func ValidateMD5Checksum(filename, checksum string) bool {
 	}
 
 	return checksum == hex.EncodeToString(h.Sum(nil))
+}
+
+// ValidateChecksum validates the file checksum matches the given value.
+// Defaults to md5 but allows for sha256 checks
+func ValidateChecksum(filename, checksum string) bool {
+	// checksum format <hint>:<checksum>
+	splittedChecksum := strings.Split(checksum, ":")
+	// default to md5 when there's no hint
+	hint := "md5sum"
+	if len(splittedChecksum) == 2 {
+		hint = splittedChecksum[0]
+	}
+
+	checksum = splittedChecksum[len(splittedChecksum)-1]
+
+	switch hint {
+	case "md5sum":
+		return validateMD5Checksum(filename, checksum)
+	case "sha256":
+		return validateSHA256Checksum(filename, checksum)
+	default:
+		return false
+	}
 }

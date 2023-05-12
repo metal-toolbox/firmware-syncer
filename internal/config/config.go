@@ -126,7 +126,8 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 						Component:   strings.ToLower(component),
 						UpstreamURL: fw.VendorURI,
 						Filename:    fw.Filename,
-						Checksum:    fw.MD5Sum,
+						// publish checksum with hash hint
+						Checksum: "md5sum:" + fw.MD5Sum,
 					})
 			}
 		}

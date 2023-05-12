@@ -107,7 +107,7 @@ func VerifyFile(ctx context.Context, tmpFs, srcFs rcloneFs.Fs, fw *serverservice
 
 	tmpFilename := path.Join(tmpFs.Root(), dstPath)
 
-	if !ValidateMD5Checksum(tmpFilename, fw.Checksum) {
+	if !ValidateChecksum(tmpFilename, fw.Checksum) {
 		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
 	}
 
@@ -276,7 +276,7 @@ func DownloadFirmwareArchive(ctx context.Context, tmpDir, archiveURL, archiveChe
 	}
 
 	if archiveChecksum != "" {
-		if !ValidateMD5Checksum(zipArchivePath, archiveChecksum) {
+		if !ValidateChecksum(zipArchivePath, archiveChecksum) {
 			return "", errors.Wrap(ErrChecksumValidate, fmt.Sprintf("zipArchivePath: %s, expected checksum: %s", zipArchivePath, archiveChecksum))
 		}
 	}
@@ -342,7 +342,7 @@ func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum strin
 		}
 	}
 
-	if firmwareChecksum != "" && !ValidateMD5Checksum(out.Name(), firmwareChecksum) {
+	if firmwareChecksum != "" && !ValidateChecksum(out.Name(), firmwareChecksum) {
 		return nil, errors.Wrap(ErrChecksumValidate, fmt.Sprintf("firmware: %s, expected checksum: %s", out.Name(), firmwareChecksum))
 	}
 

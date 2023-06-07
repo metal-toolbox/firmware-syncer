@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.15.1
 	github.com/rclone/rclone v1.62.2
 	github.com/stretchr/testify v1.8.3
-	go.hollow.sh/serverservice v0.15.2
+	go.hollow.sh/serverservice v0.15.4
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.8.0
@@ -112,7 +112,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2 // indirect
 	github.com/volatiletech/strmangle v0.0.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.hollow.sh/toolbox v0.5.2-0.20230403084733-0bfb6095e5a5 // indirect
+	go.hollow.sh/toolbox v0.6.0 // indirect
 	go.infratographer.com/x v0.0.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect

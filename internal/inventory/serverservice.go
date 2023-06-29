@@ -115,8 +115,9 @@ func (s *ServerService) Publish(ctx context.Context, cfv *serverservice.Componen
 	cfv.RepositoryURL = artifactsURL
 
 	params := serverservice.ComponentFirmwareVersionListParams{
-		Vendor:  cfv.Vendor,
-		Version: cfv.Version,
+		Vendor:   cfv.Vendor,
+		Version:  cfv.Version,
+		Filename: cfv.Filename,
 	}
 
 	firmwares, _, err := s.client.ListServerComponentFirmware(ctx, &params)

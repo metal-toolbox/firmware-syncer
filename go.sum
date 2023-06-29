@@ -2034,6 +2034,8 @@ go.hollow.sh/serverservice v0.15.2 h1:dloRw0mjftAbUazmzOPxzUtxkD4RXevBh/ybEQ1TzH
 go.hollow.sh/serverservice v0.15.2/go.mod h1:pRreacEoloF1WJIwMlSH3WQ0Q3r2Xkg9oH6ZngZRK6E=
 go.hollow.sh/serverservice v0.15.4 h1:3yMep8c9aldHsrtU6BDTUH5oZ7a0LCamMOa6tflfhlw=
 go.hollow.sh/serverservice v0.15.4/go.mod h1:r/AmqMYmk935AuVEmCNXWT5+PoeCtTK+ScBv7ZAeD9g=
+go.hollow.sh/serverservice v0.15.5 h1:d0nfMQt2cnZKmvUHzCVXpUVx0P2E9UMOMuqtxLQ4nTs=
+go.hollow.sh/serverservice v0.15.5/go.mod h1:r/AmqMYmk935AuVEmCNXWT5+PoeCtTK+ScBv7ZAeD9g=
 go.hollow.sh/toolbox v0.5.2-0.20230403084733-0bfb6095e5a5 h1:b+EylRbk0ZW6KR7fuTrrwLuhjZubsdvbnhi3dbgLQcM=
 go.hollow.sh/toolbox v0.5.2-0.20230403084733-0bfb6095e5a5/go.mod h1:ie1D46xsLHj1RZTQ4D2HCni/FMP2hSqF8tbmCTkLP4A=
 go.hollow.sh/toolbox v0.6.0 h1:4HTzh4gVPjJO1Q2FhNn2r4T+EaufTdJj49rUdasl3pA=

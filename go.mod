@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rclone/rclone v1.62.2
 	github.com/stretchr/testify v1.8.4
-	go.hollow.sh/serverservice v0.15.4
+	go.hollow.sh/serverservice v0.15.5
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	golang.org/x/net v0.11.0
 	golang.org/x/oauth2 v0.9.0

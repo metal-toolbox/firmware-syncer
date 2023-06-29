@@ -19,7 +19,7 @@ require (
 	go.hollow.sh/serverservice v0.15.4
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.11.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/oauth2 v0.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

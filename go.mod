@@ -13,7 +13,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20230220061748-93ff001f4a1d
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/prometheus/client_golang v1.15.1
+	github.com/prometheus/client_golang v1.16.0
 	github.com/rclone/rclone v1.62.2
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.15.4
@@ -91,7 +91,7 @@ require (
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
-	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/rfjakob/eme v1.1.2 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.2 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
@@ -121,7 +121,7 @@ require (
 	gocloud.dev v0.29.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.9.0 // indirect
 	golang.org/x/term v0.9.0 // indirect
 	golang.org/x/text v0.10.0 // indirect

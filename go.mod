@@ -17,7 +17,7 @@ require (
 	github.com/rclone/rclone v1.62.2
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.15.4
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	golang.org/x/net v0.11.0
 	golang.org/x/oauth2 v0.9.0
 	gopkg.in/yaml.v2 v2.4.0

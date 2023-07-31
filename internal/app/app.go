@@ -11,6 +11,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/dell"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/equinix"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/intel"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/mellanox"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
@@ -113,6 +114,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 			}
 
 			fwVendors = append(fwVendors, i)
+		case "equinix":
+			var e vendors.Vendor
+
+			e, err = equinix.New(context.TODO(), firmwares, cfgSyncer, logger)
+			if err != nil {
+				logger.Error("Failed to initialize Equinix vendor: " + err.Error())
+				return nil, err
+			}
+
+			fwVendors = append(fwVendors, e)
 		default:
 			logger.Error("Vendor not supported: " + vendor)
 			continue

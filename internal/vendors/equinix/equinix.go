@@ -43,7 +43,7 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	}
 
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+		&oauth2.Token{AccessToken: os.Getenv("GITHUB_OPENBMC_TOKEN")},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 

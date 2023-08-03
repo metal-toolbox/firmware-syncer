@@ -22,6 +22,8 @@ import (
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
+const GithubDownloadTimeout = 300
+
 // Equinix implements the Vendor interface methods to retrieve Equinix OpenBMC firmware files
 type Equinix struct {
 	firmwares []*serverservice.ComponentFirmwareVersion
@@ -160,7 +162,7 @@ func (e *Equinix) getFileFromGithub(ctx context.Context, fw *serverservice.Compo
 
 	// Give enough time for the client to download the binary file.
 	redirectClient := &http.Client{
-		Timeout: time.Second * 300,
+		Timeout: time.Second * GithubDownloadTimeout,
 	}
 
 	rc, _, err := e.ghClient.Repositories.DownloadReleaseAsset(ctx, owner, repo, *asset.ID, redirectClient)

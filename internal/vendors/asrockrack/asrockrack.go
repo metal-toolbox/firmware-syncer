@@ -103,7 +103,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
 		dstPath := vendors.DstPath(fw)
 
-		dstURL := "s3://" + a.dstCfg.Bucket + dstPath
+		dstURL := "s3://" + a.dstCfg.Bucket + "/" + dstPath
 
 		a.logger.WithFields(
 			logrus.Fields{

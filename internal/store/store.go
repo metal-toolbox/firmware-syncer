@@ -1,13 +1,13 @@
-package inventory
+package store
 
 import (
 	"context"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/firmware-syncer/app"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -27,61 +27,27 @@ type ServerService struct {
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
-	if artifactsURL == "" {
-		return nil, errors.New("missing artifacts URL")
-	}
-
-	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
-
-	if clientSecret == "" {
-		return nil, errors.New("missing server service client secret")
-	}
-
-	clientID := os.Getenv("SERVERSERVICE_CLIENT_ID")
-
-	if clientID == "" {
-		return nil, errors.New("missing server service client id")
-	}
-
-	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
-
-	if oidcProviderEndpoint == "" {
-		return nil, errors.New("missing server service oidc provider endpoint")
-	}
-
-	provider, err := oidc.NewProvider(ctx, oidcProviderEndpoint)
+func New(ctx context.Context, config *app.ServerserviceOptions, logger *logrus.Logger) (Repository, error) {
+	provider, err := oidc.NewProvider(ctx, config.OidcIssuerEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	audience := os.Getenv("SERVERSERVICE_AUDIENCE_ENDPOINT")
-
-	if audience == "" {
-		return nil, errors.New("missing server service audience URL")
-	}
-
-	scopes := []string{
-		"create:server-component-firmwares",
-		"read:server-component-firmwares",
-		"update:server-component-firmwares",
-	}
-
 	oauthConfig := clientcredentials.Config{
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
+		ClientID:       config.OidcClientID,
+		ClientSecret:   config.OidcClientSecret,
 		TokenURL:       provider.Endpoint().TokenURL,
-		Scopes:         scopes,
-		EndpointParams: url.Values{"audience": {audience}},
+		Scopes:         config.OidcClientScopes,
+		EndpointParams: url.Values{"audience": {config.OidcAudienceEndpoint}},
 	}
 
-	c, err := serverservice.NewClient(serverServiceURL, oauthConfig.Client(ctx))
+	c, err := serverservice.NewClient(config.EndpointURL.String(), oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}
 
 	return &ServerService{
-		artifactsURL: artifactsURL,
+		artifactsURL: config.ArtifactsURL,
 		client:       c,
 		logger:       logger,
 	}, nil
@@ -102,6 +68,16 @@ func (s *ServerService) getArtifactsURL(dstURL string) (string, error) {
 	aURL.Path = dURL.Path
 
 	return aURL.String(), nil
+}
+
+func (s *ServerService) FirmwareByID(ctx context.Context, fwID uuid.UUID) (*serverservice.ComponentFirmwareVersion, error) {
+	fw, _, err := s.client.GetServerComponentFirmware(ctx, fwID)
+	if err != nil {
+		return nil, err
+	}
+
+	return fw, nil
+
 }
 
 // nolint:gocyclo // silence cyclo warning

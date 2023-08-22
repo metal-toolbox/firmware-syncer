@@ -1,8 +1,21 @@
 package metrics
 
 import (
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
+	cptypes "github.com/metal-toolbox/conditionorc/pkg/types"
+)
+
+const (
+	MetricsEndpoint = "0.0.0.0:9090"
 )
 
 var (
@@ -14,6 +27,13 @@ var (
 
 	// SyncErrorsCounter metric measures the number of errors during update sync operations
 	SyncErrorsCounter *prometheus.CounterVec
+
+	EventsCounter *prometheus.CounterVec
+
+	ConditionRunTimeSummary *prometheus.SummaryVec
+	StoreQueryErrorCount    *prometheus.CounterVec
+
+	NATSErrors *prometheus.CounterVec
 )
 
 func init() {
@@ -55,4 +75,36 @@ func UpdateSyncLabels(deviceVendor, actionKind string) prometheus.Labels {
 		"vendor":     deviceVendor,
 		"actionKind": actionKind,
 	}
+}
+
+// ListenAndServeMetrics exposes prometheus metrics as /metrics
+func ListenAndServe() {
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+
+		server := &http.Server{
+			Addr:              MetricsEndpoint,
+			ReadHeaderTimeout: 2 * time.Second, // nolint:gomnd // time duration value is clear as is.
+		}
+
+		if err := server.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+}
+
+// RegisterSpanEvent adds a span event along with the given attributes.
+//
+// event here is arbitrary and can be in the form of strings like - publishCondition, updateCondition etc
+func RegisterSpanEvent(span trace.Span, condition *cptypes.Condition, workerID, firmwareID, event string) {
+	span.AddEvent(event, trace.WithAttributes(
+		attribute.String("workerID", workerID),
+		attribute.String("firmwareID", firmwareID),
+		attribute.String("conditionID", condition.ID.String()),
+		attribute.String("conditionKind", string(condition.Kind)),
+	))
+}
+
+func NATSError(op string) {
+	NATSErrors.WithLabelValues(op).Inc()
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
+	"github.com/metal-toolbox/firmware-syncer/internal/store"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
@@ -25,7 +25,7 @@ type DUP struct {
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
-	inventory *inventory.ServerService
+	inventory *store.ServerService
 }
 
 // NewDUP returns a new DUP firmware syncer object
@@ -50,7 +50,7 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := store.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}

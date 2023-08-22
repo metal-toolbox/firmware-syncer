@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
+	"github.com/metal-toolbox/firmware-syncer/internal/store"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
@@ -20,7 +20,7 @@ type ASRockRack struct {
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
-	inventory *inventory.ServerService
+	inventory *store.ServerService
 	srcCfg    *config.S3Bucket
 	dstCfg    *config.S3Bucket
 	srcFs     rcloneFs.Fs
@@ -59,7 +59,7 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := store.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}

@@ -23,7 +23,6 @@ require (
 	github.com/nats-io/nats.go v1.28.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rclone/rclone v1.63.1
-	github.com/sanity-io/litter v1.5.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.16.0

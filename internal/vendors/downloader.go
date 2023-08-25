@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/app"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -175,7 +175,7 @@ func InitLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 // initS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
 //
 // root: the directory mounted as the root/top level directory of the returned fs
-func InitS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.Fs, error) {
+func InitS3Fs(ctx context.Context, cfg *app.S3Bucket, root string) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil s3 config")
 	}

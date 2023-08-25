@@ -35,8 +35,8 @@ type App struct {
 	Kind types.AppKind
 }
 
-// New returns returns a new instance of the firmware-syncer app
-func New(appKind types.AppKind, storeKind types.StoreKind, cfgFile, loglevel string, profiling bool) (*App, <-chan os.Signal, error) {
+// New returns a new instance of the firmware-syncer app
+func New(appKind types.AppKind, inventoryKind types.InventoryKind, cfgFile, loglevel string, profiling bool) (*App, <-chan os.Signal, error) {
 	if appKind != types.AppKindSyncer {
 		return nil, nil, errors.Wrap(ErrAppInit, "invalid app kind: "+string(appKind))
 	}
@@ -48,7 +48,7 @@ func New(appKind types.AppKind, storeKind types.StoreKind, cfgFile, loglevel str
 		Logger: logrus.New(),
 	}
 
-	if err := app.LoadConfiguration(cfgFile, storeKind); err != nil {
+	if err := app.LoadConfiguration(cfgFile, inventoryKind); err != nil {
 		return nil, nil, err
 	}
 

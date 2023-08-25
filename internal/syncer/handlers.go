@@ -139,7 +139,7 @@ func (s *Syncer) processSingleEvent(ctx context.Context, e events.Message) {
 	}
 
 	// fetch firmware from store
-	fw, err := s.store.FirmwareByID(ctx, params.FirmwareID)
+	fw, err := s.inventory.FirmwareByID(ctx, params.FirmwareID)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
 			"firmwareID":  params.FirmwareID.String(),
@@ -277,11 +277,17 @@ func (s *Syncer) syncFirmware(ctx context.Context, fw *serverservice.ComponentFi
 	}
 
 	// XXX Fix this to actually sync firmware
-	// Initialize the provider
 	v, err := s.initVendor(ctx, fw)
-	v.Sync(ctx)
+	if err != nil {
+		// FIXME do something with the error here
+		return
+	}
 
-	// call sync method to copy it over
+	err = v.Sync(ctx)
+	if err != nil {
+		// FIXME do something with the error here
+		return
+	}
 
 	s.registerConditionMetrics(startTS, string(cptypes.Succeeded))
 
@@ -296,15 +302,19 @@ func (s *Syncer) initVendor(ctx context.Context, fw *serverservice.ComponentFirm
 	case common.VendorDell:
 		var dup vendors.Vendor
 
+		// FIXME: if syncer is processing events as they come, there's no need for providers to try to sync multiple ones
 		fws := []*serverservice.ComponentFirmwareVersion{fw}
-		dup, err := dell.NewDUP(context.TODO(), fws, s.logger)
+
+		dup, err := dell.NewDUP(context.TODO(), fws, s.inventory, s.firmwareRepository, s.logger)
 		if err != nil {
 			s.logger.Error("Failed to initialize Dell vendor: " + err.Error())
 			return nil, err
 		}
+
 		return dup, nil
 	default:
 		s.logger.Error("Vendor not supported: " + fw.Vendor)
+		return nil, errors.New("vendor not supported")
 	}
 }
 

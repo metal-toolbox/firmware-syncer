@@ -6,8 +6,8 @@ import (
 
 	"github.com/equinix-labs/otel-init-go/otelinit"
 	"github.com/metal-toolbox/firmware-syncer/app"
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/metrics"
-	"github.com/metal-toolbox/firmware-syncer/internal/store"
 	"github.com/metal-toolbox/firmware-syncer/internal/syncer"
 	"github.com/metal-toolbox/firmware-syncer/internal/version"
 	"github.com/metal-toolbox/firmware-syncer/pkg/types"
@@ -29,14 +29,14 @@ var (
 	dryrun         bool
 	faultInjection bool
 	facilityCode   string
-	storeKind      string
+	inventoryKind  string
 	replicas       int
 )
 
 func runWorker(ctx context.Context) {
 	theApp, termCh, err := app.New(
 		types.AppKindSyncer,
-		types.StoreKind(storeKind),
+		types.InventoryKind(inventoryKind),
 		cfgFile,
 		logLevel,
 		enableProfiling,
@@ -62,7 +62,7 @@ func runWorker(ctx context.Context) {
 		cancelFunc()
 	}()
 
-	inv, err := store.New(ctx, theApp.Config.ServerserviceOptions, theApp.Logger)
+	inv, err := inventory.New(ctx, theApp.Config.ServerserviceOptions, theApp.Config.ArtifactsURL, theApp.Logger)
 	if err != nil {
 		theApp.Logger.Fatal(err)
 	}
@@ -92,14 +92,14 @@ func runWorker(ctx context.Context) {
 }
 
 func init() {
-	cmdRun.PersistentFlags().StringVar(&storeKind, "store", "", "Inventory store to lookup firmwares for syncing - 'serverservice' or an inventory file with a .yml/.yaml extenstion")
+	cmdRun.PersistentFlags().StringVar(&inventoryKind, "inventory", "", "Inventory to lookup firmwares for syncing - 'serverservice' or an inventory file with a .yml/.yaml extenstion")
 	cmdRun.PersistentFlags().BoolVarP(&dryrun, "dry-run", "", false, "In dryrun mode, the worker actions the task without syncing firmware")
 	cmdRun.PersistentFlags().BoolVarP(&useStatusKV, "use-kv", "", false, "When this is true, syncer writes status to a NATS KV store instead of sending reply messages (requires --facility-code)")
 	cmdRun.PersistentFlags().BoolVarP(&faultInjection, "fault-injection", "", false, "Tasks can include a Fault attribute to allow fault injection for development purposes")
 	cmdRun.PersistentFlags().IntVarP(&replicas, "replica-count", "r", 3, "The number of replicas to use for NATS data")
 	cmdRun.PersistentFlags().StringVar(&facilityCode, "facility-code", "", "The facility code this syncer instance is associated with")
 
-	if err := cmdRun.MarkPersistentFlagRequired("store"); err != nil {
+	if err := cmdRun.MarkPersistentFlagRequired("inventory"); err != nil {
 		log.Fatal(err)
 	}
 

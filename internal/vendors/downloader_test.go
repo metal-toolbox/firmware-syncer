@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/app"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,7 +53,7 @@ func Test_InitLocalFs(t *testing.T) {
 
 func Test_InitS3Fs(t *testing.T) {
 	cases := []struct {
-		cfg  *config.S3Bucket
+		cfg  *app.S3Bucket
 		root string
 		err  error
 		want string
@@ -67,35 +67,35 @@ func Test_InitS3Fs(t *testing.T) {
 			"s3 config nil",
 		},
 		{
-			&config.S3Bucket{},
+			&app.S3Bucket{},
 			"",
 			ErrRootDirUndefined,
 			"",
 			"root dir undefined",
 		},
 		{
-			&config.S3Bucket{},
+			&app.S3Bucket{},
 			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&config.S3Bucket{Endpoint: "s3.example.foo"},
+			&app.S3Bucket{Endpoint: "s3.example.foo"},
 			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&config.S3Bucket{Endpoint: "s3.example.foo", AccessKey: "sekrit"},
+			&app.S3Bucket{Endpoint: "s3.example.foo", AccessKey: "sekrit"},
 			"/foobar",
 			ErrInitS3Fs,
 			"",
 			"s3 params undefined",
 		},
 		{
-			&config.S3Bucket{Region: "region", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
+			&app.S3Bucket{Region: "region", Endpoint: "s3.example.foo", AccessKey: "sekrit", SecretKey: "sekrit"},
 			"/foobar",
 			nil,
 			"S3 bucket foobar",

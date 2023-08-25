@@ -15,7 +15,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.hollow.sh/toolbox/events"
-	"gopkg.in/yaml.v2"
+
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 const (
@@ -44,7 +45,7 @@ type Configuration struct {
 	// The inventory source - one of serverservice OR Yaml
 	InventorySource string `mapstructure:"inventory_source"`
 
-	StoreKind types.StoreKind `mapstructure:"store_kind"`
+	InventoryKind types.InventoryKind `mapstructure:"inventory_kind"`
 
 	// ServerserviceOptions defines the serverservice client configuration parameters
 	//
@@ -60,6 +61,12 @@ type Configuration struct {
 	//
 	// This parameter is required when EventsBrokerKind is set to nats.
 	NatsOptions *events.NatsOptions `mapstructure:"nats"`
+
+	// FirmwareRepository defines configuration for the s3 bucket firmware will be synced to
+	FirmwareRepository *S3Bucket `mapstructure:"s3bucket"`
+
+	// ArtifactsURL defines the artifacts URL used by all firmware
+	ArtifactsURL string `mapstructure:"artifacts_url"`
 }
 
 // ServerserviceOptions defines configuration for the Serverservice client.
@@ -73,13 +80,12 @@ type ServerserviceOptions struct {
 	OidcClientID         string   `mapstructure:"oidc_client_id"`
 	OidcClientScopes     []string `mapstructure:"oidc_client_scopes"`
 	DisableOAuth         bool     `mapstructure:"disable_oauth"`
-	ArtifactsURL         string   `mapstructure:"artifacts_url"`
 }
 
 // LoadConfiguration loads application configuration
 //
 // Reads in the cfgFile when available and overrides from environment variables.
-func (a *App) LoadConfiguration(cfgFile string, storeKind types.StoreKind) error {
+func (a *App) LoadConfiguration(cfgFile string, inventoryKind types.InventoryKind) error {
 	a.v.SetConfigType("yaml")
 	a.v.SetEnvPrefix(types.AppName)
 	a.v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -100,14 +106,14 @@ func (a *App) LoadConfiguration(cfgFile string, storeKind types.StoreKind) error
 		}
 
 		if err = a.v.ReadConfig(fh); err != nil {
-			return errors.Wrap(ErrConfig, "ReadConfig error:"+err.Error())
+			return errors.Wrap(ErrConfig, "ReadConfig error: "+err.Error())
 		}
 	}
 
 	a.v.SetDefault("log.level", "info")
 
 	if err := a.envBindVars(); err != nil {
-		return errors.Wrap(ErrConfig, "env var bind error:"+err.Error())
+		return errors.Wrap(ErrConfig, "env var bind error: "+err.Error())
 	}
 
 	if err := a.v.Unmarshal(a.Config); err != nil {
@@ -118,13 +124,13 @@ func (a *App) LoadConfiguration(cfgFile string, storeKind types.StoreKind) error
 
 	if a.Config.EventsBrokerKind == "nats" {
 		if err := a.envVarNatsOverrides(); err != nil {
-			return errors.Wrap(ErrConfig, "nats env overrides error:"+err.Error())
+			return errors.Wrap(ErrConfig, "nats env overrides error: "+err.Error())
 		}
 	}
 
-	if storeKind == types.InventoryStoreServerservice {
+	if inventoryKind == types.InventoryStoreServerservice {
 		if err := a.envVarServerserviceOverrides(); err != nil {
-			return errors.Wrap(ErrConfig, "serverservice env overrides error:"+err.Error())
+			return errors.Wrap(ErrConfig, "serverservice env overrides error: "+err.Error())
 		}
 	}
 
@@ -212,7 +218,7 @@ func (a *App) envVarNatsOverrides() error {
 	}
 
 	if a.Config.NatsOptions.Stream.Name == "" {
-		return errors.New("A stream name is required")
+		return errors.New("a stream name is required")
 	}
 
 	if a.v.GetString("nats.consumer.name") != "" {
@@ -326,14 +332,6 @@ var (
 	ErrProviderNotSupported = errors.New("provider not suppported")
 )
 
-type Syncer struct {
-	ServerServiceURL    string `yaml:"serverserviceURL"`
-	RepositoryURL       string `yaml:"repositoryURL"`
-	RepositoryRegion    string `yaml:"repositoryRegion"`
-	ArtifactsURL        string `yaml:"artifactsURL"`
-	FirmwareManifestURL string `yaml:"firmwareManifestURL"`
-}
-
 // FirmwareRecord from modeldata.json
 type FirmwareRecord struct {
 	BuildDate       string `json:"build_date"`
@@ -361,22 +359,6 @@ type S3Bucket struct {
 	Bucket    string `mapstructure:"bucket"`   // fup-data
 	AccessKey string `mapstructure:"access_key"`
 	SecretKey string `mapstructure:"secret_key"`
-}
-
-func LoadSyncerConfig(configFile string) (*Syncer, error) {
-	b, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var config *Syncer
-
-	err = yaml.Unmarshal(b, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }
 
 func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]*serverservice.ComponentFirmwareVersion, error) {

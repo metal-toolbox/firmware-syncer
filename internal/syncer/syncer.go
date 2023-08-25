@@ -11,7 +11,8 @@ import (
 	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/events/registry"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/store"
+	"github.com/metal-toolbox/firmware-syncer/app"
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 )
 
 const (
@@ -28,20 +29,21 @@ var (
 )
 
 type Syncer struct {
-	stream            events.Stream
-	store             store.Repository
-	syncWG            *sync.WaitGroup
-	logger            *logrus.Logger
-	name              string
-	id                registry.ControllerID // assigned when this worker registers itself
-	facilityCode      string
-	concurrency       int
-	dispatched        int32
-	dryrun            bool
-	faultInjection    bool
-	useStatusKV       bool
-	replicaCount      int
-	statusKVPublisher *statusKVPublisher
+	stream             events.Stream
+	inventory          inventory.Inventory
+	syncWG             *sync.WaitGroup
+	logger             *logrus.Logger
+	name               string
+	id                 registry.ControllerID // assigned when this worker registers itself
+	facilityCode       string
+	concurrency        int
+	dispatched         int32
+	dryrun             bool
+	faultInjection     bool
+	useStatusKV        bool
+	replicaCount       int
+	statusKVPublisher  *statusKVPublisher
+	firmwareRepository *app.S3Bucket
 }
 
 func New(
@@ -52,14 +54,14 @@ func New(
 	concurrency,
 	replicaCount int,
 	stream events.Stream,
-	repository store.Repository,
+	inv inventory.Inventory,
 	logger *logrus.Logger,
 ) *Syncer {
 	id, _ := os.Hostname()
 
 	return &Syncer{
 		stream:         stream,
-		store:          repository,
+		inventory:      inv,
 		syncWG:         &sync.WaitGroup{},
 		logger:         logger,
 		name:           id,

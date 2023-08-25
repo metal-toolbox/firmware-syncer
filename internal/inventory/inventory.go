@@ -1,4 +1,4 @@
-package store
+package inventory
 
 import (
 	"context"
@@ -21,13 +21,18 @@ var (
 	ErrServerServiceQuery             = errors.New("server service query failed")
 )
 
+type Inventory interface {
+	Publish(ctx context.Context, cfv *serverservice.ComponentFirmwareVersion, dstURL string) error
+	FirmwareByID(ctx context.Context, fwID uuid.UUID) (*serverservice.ComponentFirmwareVersion, error)
+}
+
 type ServerService struct {
 	artifactsURL string
 	client       *serverservice.Client
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, config *app.ServerserviceOptions, logger *logrus.Logger) (Repository, error) {
+func New(ctx context.Context, config *app.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (Inventory, error) {
 	provider, err := oidc.NewProvider(ctx, config.OidcIssuerEndpoint)
 	if err != nil {
 		return nil, err
@@ -47,7 +52,7 @@ func New(ctx context.Context, config *app.ServerserviceOptions, logger *logrus.L
 	}
 
 	return &ServerService{
-		artifactsURL: config.ArtifactsURL,
+		artifactsURL: artifactsURL,
 		client:       c,
 		logger:       logger,
 	}, nil

@@ -2,10 +2,9 @@ package dell
 
 import (
 	"context"
-	"os"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/store"
+	"github.com/metal-toolbox/firmware-syncer/app"
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	"github.com/pkg/errors"
@@ -18,43 +17,17 @@ import (
 
 // DUP implements the Vendor interface methods to retrieve dell DUP firmware files
 type DUP struct {
-	syncer    *config.Syncer
-	dstCfg    *config.S3Bucket
+	dstCfg    *app.S3Bucket
 	dstFs     rcloneFs.Fs
 	tmpFs     rcloneFs.Fs
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
-	inventory *store.ServerService
+	inventory inventory.Inventory
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
-	// RepositoryURL required
-	if cfgSyncer.RepositoryURL == "" {
-		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
-	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
-	if err != nil {
-		return nil, err
-	}
-
-	s3Cfg := &config.S3Bucket{
-		Region:    cfgSyncer.RepositoryRegion,
-		Endpoint:  s3Endpoint,
-		Bucket:    s3Bucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
-	}
-
-	// init inventory
-	i, err := store.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
-	if err != nil {
-		return nil, err
-	}
-
+func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, inv inventory.Inventory, s3Cfg *app.S3Bucket, logger *logrus.Logger) (vendors.Vendor, error) {
 	// init rclone filesystems for tmp and dst files
 	vendors.SetRcloneLogging(logger)
 
@@ -69,14 +42,13 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 	}
 
 	return &DUP{
-		syncer:    cfgSyncer,
 		dstCfg:    s3Cfg,
 		dstFs:     dstFs,
 		tmpFs:     tmpFs,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
-		inventory: i,
+		inventory: inv,
 	}, nil
 }
 

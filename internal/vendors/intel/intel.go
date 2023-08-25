@@ -5,10 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/app"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-	"github.com/pkg/errors"
 	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
@@ -17,45 +16,19 @@ import (
 )
 
 type Intel struct {
-	syncer    *config.Syncer
 	firmwares []*serverservice.ComponentFirmwareVersion
 	logger    *logrus.Logger
 	metrics   *vendors.Metrics
-	inventory *inventory.ServerService
-	dstCfg    *config.S3Bucket
+	inventory inventory.Inventory
+	dstCfg    *app.S3Bucket
 	dstFs     fs.Fs
 	tmpFs     fs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
-	// RepositoryURL required
-	if cfgSyncer.RepositoryURL == "" {
-		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
-	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
-	if err != nil {
-		return nil, err
-	}
-
-	dstS3Config := &config.S3Bucket{
-		Region:    cfgSyncer.RepositoryRegion,
-		Endpoint:  s3DstEndpoint,
-		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
-	}
-
-	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
-	if err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, inv inventory.Inventory, firmwareRepository *app.S3Bucket, logger *logrus.Logger) (vendors.Vendor, error) {
 	vendors.SetRcloneLogging(logger)
 
-	dstFs, err := vendors.InitS3Fs(ctx, dstS3Config, "/")
+	dstFs, err := vendors.InitS3Fs(ctx, firmwareRepository, "/")
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +39,11 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	}
 
 	return &Intel{
-		syncer:    cfgSyncer,
 		firmwares: firmwares,
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
-		inventory: i,
-		dstCfg:    dstS3Config,
+		inventory: inv,
+		dstCfg:    firmwareRepository,
 		dstFs:     dstFs,
 		tmpFs:     tmpFs,
 	}, nil

@@ -9,19 +9,19 @@ import (
 )
 
 type (
-	AppKind   string
-	StoreKind string
+	AppKind       string
+	InventoryKind string
 	// LogLevel is the logging level string.
 	LogLevel string
 )
 
 const (
-	AppName                                         = "firmware-syncer"
+	AppName                                         = "syncer"
 	AppKindSyncer             AppKind               = "worker"
 	ConditionKindFirmwareSync cptypes.ConditionKind = "firmwareSync"
 
-	InventoryStoreYAML          StoreKind = "yaml"
-	InventoryStoreServerservice StoreKind = "serverservice"
+	InventoryStoreYAML          InventoryKind = "yaml"
+	InventoryStoreServerservice InventoryKind = "serverservice"
 
 	LogLevelInfo  LogLevel = "info"
 	LogLevelDebug LogLevel = "debug"
@@ -31,9 +31,9 @@ const (
 // AppKinds returns the supported firmware-syncer app kinds
 func AppKinds() []AppKind { return []AppKind{AppKindSyncer} }
 
-// StoreKinds returns the supported asset inventory, firmware configuration sources
-func StoreKinds() []StoreKind {
-	return []StoreKind{InventoryStoreYAML, InventoryStoreServerservice}
+// InventoryKinds returns the supported asset inventory, firmware configuration sources
+func InventoryKinds() []InventoryKind {
+	return []InventoryKind{InventoryStoreYAML, InventoryStoreServerservice}
 }
 
 type Firmware struct{ ID uuid.UUID }

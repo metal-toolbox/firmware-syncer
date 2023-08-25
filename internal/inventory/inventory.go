@@ -33,6 +33,29 @@ type ServerService struct {
 }
 
 func New(ctx context.Context, config *app.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (Inventory, error) {
+	var client *serverservice.Client
+	var err error
+
+	if !config.DisableOAuth {
+		client, err = newClientWithOAuth(ctx, config, logger)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		client, err = serverservice.NewClientWithToken("fake", config.Endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &ServerService{
+		artifactsURL: artifactsURL,
+		client:       client,
+		logger:       logger,
+	}, nil
+}
+
+func newClientWithOAuth(ctx context.Context, config *app.ServerserviceOptions, logger *logrus.Logger) (client *serverservice.Client, err error) {
 	provider, err := oidc.NewProvider(ctx, config.OidcIssuerEndpoint)
 	if err != nil {
 		return nil, err
@@ -46,16 +69,12 @@ func New(ctx context.Context, config *app.ServerserviceOptions, artifactsURL str
 		EndpointParams: url.Values{"audience": {config.OidcAudienceEndpoint}},
 	}
 
-	c, err := serverservice.NewClient(config.EndpointURL.String(), oauthConfig.Client(ctx))
+	client, err = serverservice.NewClient(config.EndpointURL.String(), oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}
 
-	return &ServerService{
-		artifactsURL: artifactsURL,
-		client:       c,
-		logger:       logger,
-	}, nil
+	return client, nil
 }
 
 // getArtifactsURL returns the https artifactsURL for the given s3 dstURL

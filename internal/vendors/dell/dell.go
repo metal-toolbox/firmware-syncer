@@ -88,7 +88,7 @@ func (d *DUP) Stats() *vendors.Metrics {
 func (d *DUP) Sync(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		dstPath := vendors.DstPath(fw)
-		dstURL := "s3://" + d.dstCfg.Bucket + dstPath
+		dstURL := "s3://" + d.dstCfg.Bucket + "/" + dstPath
 
 		d.logger.WithFields(
 			logrus.Fields{

@@ -13,6 +13,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20230717121556-5eb9915a8a5a
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v55 v55.0.0
 	github.com/google/uuid v1.3.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rclone/rclone v1.63.1

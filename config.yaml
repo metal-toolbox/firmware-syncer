@@ -1,0 +1,17 @@
+asrr:
+  s3:
+    region:
+    endpoint:
+    bucket:
+    access_key:
+    secret_key:
+s3:
+    access_key:
+    secret_key:
+serverservice:
+  client_secret:
+  client_id:
+  oidc_provider_endpoint:
+  audience_endpoint:
+github:
+  openbmc_token:

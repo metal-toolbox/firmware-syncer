@@ -5,8 +5,6 @@ import (
 	"os"
 
 	"github.com/bmc-toolbox/common"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
@@ -15,6 +13,8 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/intel"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/mellanox"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -51,9 +51,9 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 	v.SetConfigFile("config.yaml")
 	v.AddConfigPath(".")
 	err := v.ReadInConfig()
+
 	if err != nil {
 		logger.Error("Failed to find viper config file")
-		// return nil, err
 	}
 
 	// Load configuration

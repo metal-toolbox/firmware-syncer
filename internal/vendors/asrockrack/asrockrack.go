@@ -6,11 +6,11 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-	"github.com/spf13/viper"
 	"github.com/pkg/errors"
 	rcloneFs "github.com/rclone/rclone/fs"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
@@ -27,7 +27,7 @@ type ASRockRack struct {
 	tmpFs     rcloneFs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v* viper.Viper) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v *viper.Viper) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")

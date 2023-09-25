@@ -10,10 +10,10 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
-	"golang.org/x/oauth2/clientcredentials"
 	"github.com/spf13/viper"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 var (
@@ -27,7 +27,7 @@ type ServerService struct {
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger, v* viper.Viper) (*ServerService, error) {
+func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger, v *viper.Viper) (*ServerService, error) {
 	if artifactsURL == "" {
 		return nil, errors.New("missing artifacts URL")
 	}

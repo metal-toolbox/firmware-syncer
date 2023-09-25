@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
+	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 
 	"github.com/pkg/errors"
@@ -36,14 +36,14 @@ type Equinix struct {
 	tmpFs     fs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v* viper.Viper) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_OPENBMC_TOKEN")},
+		&oauth2.Token{AccessToken: config.LoadEnvironmentVariable(v, logger, "github.openbmc_token")},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
@@ -59,12 +59,12 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3DstEndpoint,
 		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
+		AccessKey: config.LoadEnvironmentVariable(v, logger, "s3.access_key"),
+		SecretKey: config.LoadEnvironmentVariable(v, logger, "s3.secret_key"),
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger, v)
 	if err != nil {
 		return nil, err
 	}

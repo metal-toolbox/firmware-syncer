@@ -6,7 +6,7 @@ import (
 
 	"github.com/bmc-toolbox/common"
 	"github.com/sirupsen/logrus"
-
+	"github.com/spf13/viper"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
@@ -46,6 +46,16 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		logger.SetLevel(logrus.InfoLevel)
 	}
 
+	// Load up configs
+	v := viper.New()
+	v.SetConfigFile("config.yaml")
+	v.AddConfigPath(".")
+	err := v.ReadInConfig()
+	if err != nil {
+		logger.Error("Failed to find viper config file")
+		// return nil, err
+	}
+
 	// Load configuration
 	cfgSyncer, err := config.LoadSyncerConfig(configFile)
 	if err != nil {
@@ -67,7 +77,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorDell:
 			var dup vendors.Vendor
 
-			dup, err = dell.NewDUP(context.TODO(), firmwares, cfgSyncer, logger)
+			dup, err = dell.NewDUP(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize Dell vendor: " + err.Error())
 				return nil, err
@@ -77,7 +87,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorAsrockrack:
 			var asrr vendors.Vendor
 
-			asrr, err = asrockrack.New(context.TODO(), firmwares, cfgSyncer, logger)
+			asrr, err = asrockrack.New(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize ASRockRack vendor:" + err.Error())
 				return nil, err
@@ -87,7 +97,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorSupermicro:
 			var sm vendors.Vendor
 
-			sm, err = supermicro.New(context.TODO(), firmwares, cfgSyncer, logger)
+			sm, err = supermicro.New(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize Supermicro vendor: " + err.Error())
 				return nil, err
@@ -97,7 +107,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorMellanox:
 			var mlx vendors.Vendor
 
-			mlx, err = mellanox.New(context.TODO(), firmwares, cfgSyncer, logger)
+			mlx, err = mellanox.New(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize Mellanox vendor: " + err.Error())
 				return nil, err
@@ -107,7 +117,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case common.VendorIntel:
 			var i vendors.Vendor
 
-			i, err = intel.New(context.TODO(), firmwares, cfgSyncer, logger)
+			i, err = intel.New(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize Intel vendor: " + err.Error())
 				return nil, err
@@ -117,7 +127,7 @@ func New(configFile string, logLevel int) (*Syncer, error) {
 		case "equinix":
 			var e vendors.Vendor
 
-			e, err = equinix.New(context.TODO(), firmwares, cfgSyncer, logger)
+			e, err = equinix.New(context.TODO(), firmwares, cfgSyncer, logger, v)
 			if err != nil {
 				logger.Error("Failed to initialize Equinix vendor: " + err.Error())
 				return nil, err

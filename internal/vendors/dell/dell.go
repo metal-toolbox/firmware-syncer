@@ -2,11 +2,11 @@ package dell
 
 import (
 	"context"
-	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
+	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
 	rcloneFs "github.com/rclone/rclone/fs"
@@ -29,7 +29,7 @@ type DUP struct {
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v* viper.Viper) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -45,12 +45,12 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3Endpoint,
 		Bucket:    s3Bucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
+		AccessKey: config.LoadEnvironmentVariable(v, logger, "s3.access_key"),
+		SecretKey: config.LoadEnvironmentVariable(v, logger, "s3.secret_key"),
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger, v)
 	if err != nil {
 		return nil, err
 	}

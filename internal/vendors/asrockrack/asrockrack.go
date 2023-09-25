@@ -2,12 +2,11 @@ package asrockrack
 
 import (
 	"context"
-	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-
+	"github.com/spf13/viper"
 	"github.com/pkg/errors"
 	rcloneFs "github.com/rclone/rclone/fs"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
@@ -28,20 +27,18 @@ type ASRockRack struct {
 	tmpFs     rcloneFs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v* viper.Viper) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
 	}
 
-	// TODO: For now set this configuration from env vars but ideally this should come from
-	// somewhere else. Maybe a per provider config?
 	srcS3Config := &config.S3Bucket{
-		Region:    os.Getenv("ASRR_S3_REGION"),
-		Endpoint:  os.Getenv("ASRR_S3_ENDPOINT"),
-		Bucket:    os.Getenv("ASRR_S3_BUCKET"),
-		AccessKey: os.Getenv("ASRR_S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("ASRR_S3_SECRET_KEY"),
+		Region:    config.LoadEnvironmentVariable(v, logger, "asrr.s3.region"),
+		Endpoint:  config.LoadEnvironmentVariable(v, logger, "asrr.s3.endpoint"),
+		Bucket:    config.LoadEnvironmentVariable(v, logger, "asrr.s3.bucket"),
+		AccessKey: config.LoadEnvironmentVariable(v, logger, "asrr.s3.access_key"),
+		SecretKey: config.LoadEnvironmentVariable(v, logger, "asrr.s3.secret_key"),
 	}
 
 	// parse S3 endpoint and bucket from cfgSyncer.RepositoryURL
@@ -54,12 +51,12 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3DstEndpoint,
 		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
+		AccessKey: config.LoadEnvironmentVariable(v, logger, "s3.access_key"),
+		SecretKey: config.LoadEnvironmentVariable(v, logger, "s3.secret_key"),
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger, v)
 	if err != nil {
 		return nil, err
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -32,7 +33,7 @@ type Supermicro struct {
 	tmpFs     fs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger, v* viper.Viper) (vendors.Vendor, error) {
 	// RepositoryURL required
 	if cfgSyncer.RepositoryURL == "" {
 		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
@@ -48,12 +49,12 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		Region:    cfgSyncer.RepositoryRegion,
 		Endpoint:  s3DstEndpoint,
 		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
+		AccessKey: config.LoadEnvironmentVariable(v, logger, "s3.access_key"),
+		SecretKey: config.LoadEnvironmentVariable(v, logger, "s3.secret_key"),
 	}
 
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger, v)
 	if err != nil {
 		return nil, err
 	}

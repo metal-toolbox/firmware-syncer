@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
+	"github.com/sirupsen/logrus"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -145,4 +147,13 @@ func ParseRepositoryURL(repositoryURL string) (endpoint, bucket string, err erro
 	bucket = strings.Trim(u.Path, "/")
 
 	return u.Host, bucket, nil
+}
+
+func LoadEnvironmentVariable(v* viper.Viper, logger *logrus.Logger, key string) (string) {
+	val := v.Get(key)
+	if val == nil {
+		logger.Warnf("Failed to find %s in config.yaml", key)
+	}
+
+	return val.(string)
 }

@@ -3,16 +3,16 @@ package inventory
 import (
 	"context"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2/clientcredentials"
-
+	"github.com/spf13/viper"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
@@ -27,25 +27,22 @@ type ServerService struct {
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
+func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger, v* viper.Viper) (*ServerService, error) {
 	if artifactsURL == "" {
 		return nil, errors.New("missing artifacts URL")
 	}
 
-	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
-
+	clientSecret := config.LoadEnvironmentVariable(v, logger, "serverservice.client_secret")
 	if clientSecret == "" {
 		return nil, errors.New("missing server service client secret")
 	}
 
-	clientID := os.Getenv("SERVERSERVICE_CLIENT_ID")
-
+	clientID := config.LoadEnvironmentVariable(v, logger, "serverservice.client_id")
 	if clientID == "" {
 		return nil, errors.New("missing server service client id")
 	}
 
-	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
-
+	oidcProviderEndpoint := config.LoadEnvironmentVariable(v, logger, "serverservice.oidc_provider_endpoint")
 	if oidcProviderEndpoint == "" {
 		return nil, errors.New("missing server service oidc provider endpoint")
 	}
@@ -55,8 +52,7 @@ func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *log
 		return nil, err
 	}
 
-	audience := os.Getenv("SERVERSERVICE_AUDIENCE_ENDPOINT")
-
+	audience := config.LoadEnvironmentVariable(v, logger, "serverservice.audience_endpoint")
 	if audience == "" {
 		return nil, errors.New("missing server service audience URL")
 	}

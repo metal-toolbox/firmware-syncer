@@ -3,31 +3,65 @@ package config
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"github.com/pkg/errors"
 
+	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 var (
+	ErrConfig               = errors.New("configuration error")
 	ErrProviderAttributes   = errors.New("provider config missing required attribute(s)")
 	ErrNoFileChecksum       = errors.New("file upstreamURL declared with no checksum (Provider.UtilityChecksum)")
 	ErrProviderNotSupported = errors.New("provider not suppported")
 )
 
-type Syncer struct {
-	ServerServiceURL    string `yaml:"serverserviceURL"`
-	RepositoryURL       string `yaml:"repositoryURL"`
-	RepositoryRegion    string `yaml:"repositoryRegion"`
-	ArtifactsURL        string `yaml:"artifactsURL"`
-	FirmwareManifestURL string `yaml:"firmwareManifestURL"`
+// Config holds application configuration read from a YAML or set by env variables.
+type Configuration struct {
+	// LogLevel is the app verbose logging level.
+	// one of - info, debug, trace
+	LogLevel string `mapstructure:"log_level"`
+
+	InventoryKind types.InventoryKind `mapstructure:"inventory_kind"`
+
+	// ServerserviceOptions defines the serverservice client configuration parameters
+	//
+	// This parameter is required when StoreKind is set to serverservice.
+	ServerserviceOptions *ServerserviceOptions `mapstructure:"serverservice"`
+
+	// FirmwareRepository defines configuration for the s3 bucket firmware will be synced to
+	FirmwareRepository *S3Bucket `mapstructure:"s3bucket"`
+
+	// AsRockRackRepository defines configuration for the asrockrack s3 source firmware bucket
+	AsRockRackRepository *S3Bucket `mapstructure:"s3bucket"`
+
+	// ArtifactsURL defines the artifacts URL used by all firmware
+	ArtifactsURL string `mapstructure:"artifacts_url"`
+
+	// FirmwareManifestURL defines the URL for modeldata.json
+	FirmwareManifestURL string `mapstructure:"firmware_manifest_url"`
+
+	// GithubOpenBmcToken defines the token used to access internal openbmc repository
+	GithubOpenBmcToken string `mapstructure:"github_openbmc_token"`
+}
+
+// ServerserviceOptions defines configuration for the Serverservice client.
+// https://github.com/metal-toolbox/hollow-serverservice
+type ServerserviceOptions struct {
+	EndpointURL          *url.URL
+	Endpoint             string   `mapstructure:"endpoint"`
+	OidcIssuerEndpoint   string   `mapstructure:"oidc_issuer_endpoint"`
+	OidcAudienceEndpoint string   `mapstructure:"oidc_audience_endpoint"`
+	OidcClientSecret     string   `mapstructure:"oidc_client_secret"`
+	OidcClientID         string   `mapstructure:"oidc_client_id"`
+	OidcClientScopes     []string `mapstructure:"oidc_client_scopes"`
+	DisableOAuth         bool     `mapstructure:"disable_oauth"`
 }
 
 // FirmwareRecord from modeldata.json
@@ -57,22 +91,6 @@ type S3Bucket struct {
 	Bucket    string `mapstructure:"bucket"`   // fup-data
 	AccessKey string `mapstructure:"access_key"`
 	SecretKey string `mapstructure:"secret_key"`
-}
-
-func LoadSyncerConfig(configFile string) (*Syncer, error) {
-	b, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var config *Syncer
-
-	err = yaml.Unmarshal(b, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }
 
 func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]*serverservice.ComponentFirmwareVersion, error) {

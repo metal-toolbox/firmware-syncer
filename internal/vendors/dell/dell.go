@@ -2,7 +2,6 @@ package dell
 
 import (
 	"context"
-	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
@@ -18,7 +17,6 @@ import (
 
 // DUP implements the Vendor interface methods to retrieve dell DUP firmware files
 type DUP struct {
-	syncer    *config.Syncer
 	dstCfg    *config.S3Bucket
 	dstFs     rcloneFs.Fs
 	tmpFs     rcloneFs.Fs
@@ -29,28 +27,9 @@ type DUP struct {
 }
 
 // NewDUP returns a new DUP firmware syncer object
-func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
-	// RepositoryURL required
-	if cfgSyncer.RepositoryURL == "" {
-		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
-	// parse S3 endpoint and bucket from cfgProvider.RepositoryURL
-	s3Endpoint, s3Bucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
-	if err != nil {
-		return nil, err
-	}
-
-	s3Cfg := &config.S3Bucket{
-		Region:    cfgSyncer.RepositoryRegion,
-		Endpoint:  s3Endpoint,
-		Bucket:    s3Bucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
-	}
-
+func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfg *config.Configuration, logger *logrus.Logger) (vendors.Vendor, error) {
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfg.ServerserviceOptions, cfg.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +37,7 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 	// init rclone filesystems for tmp and dst files
 	vendors.SetRcloneLogging(logger)
 
-	dstFs, err := vendors.InitS3Fs(ctx, s3Cfg, "/")
+	dstFs, err := vendors.InitS3Fs(ctx, cfg.FirmwareRepository, "/")
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +48,7 @@ func NewDUP(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVer
 	}
 
 	return &DUP{
-		syncer:    cfgSyncer,
-		dstCfg:    s3Cfg,
+		dstCfg:    cfg.FirmwareRepository,
 		dstFs:     dstFs,
 		tmpFs:     tmpFs,
 		firmwares: firmwares,

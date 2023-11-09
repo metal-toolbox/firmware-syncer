@@ -33,14 +33,15 @@ build-linux: go-mod
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o firmware-syncer -mod vendor
 	sha256sum firmware-syncer > firmware-syncer_checksum.txt
 
+## build docker image and tag as ghcr.io/metal-toolbox/firmware-syncer:latest
 build-image: build-linux
 	docker build --rm=true -f Dockerfile -t ${DOCKER_IMAGE}:latest  . \
 							 --label org.label-schema.schema-version=1.0 \
 							 --label org.label-schema.vcs-ref=$(GIT_COMMIT_FULL) \
 							 --label org.label-schema.vcs-url=$(REPO)
 
-## Build devel docker image
-build-image-devel: build-image
+## tag and push devel docker image to local registry
+push-image-devel: build-image
 	docker tag ${DOCKER_IMAGE}:latest localhost:5001/firmware-syncer:latest
 	docker push localhost:5001/firmware-syncer:latest
 	kind load docker-image localhost:5001/firmware-syncer:latest

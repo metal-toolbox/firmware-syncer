@@ -66,17 +66,16 @@ func (d *DUP) Stats() *vendors.Metrics {
 func (d *DUP) Sync(ctx context.Context) error {
 	for _, fw := range d.firmwares {
 		dstPath := vendors.DstPath(fw)
-		dstURL := "s3://" + d.dstCfg.Bucket + "/" + dstPath
 
 		d.logger.WithFields(
 			logrus.Fields{
 				"src": fw.UpstreamURL,
-				"dst": dstURL,
+				"dst": dstPath,
 			},
 		).Info("sync DUP")
 
 		// In case the file already exists in dst, don't verify/copy it
-		if exists, _ := rcloneFs.FileExists(ctx, d.dstFs, vendors.DstPath(fw)); exists {
+		if exists, _ := rcloneFs.FileExists(ctx, d.dstFs, dstPath); exists {
 			d.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -104,7 +103,7 @@ func (d *DUP) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = d.inventory.Publish(ctx, fw, dstURL)
+		err = d.inventory.Publish(ctx, fw)
 		if err != nil {
 			return err
 		}

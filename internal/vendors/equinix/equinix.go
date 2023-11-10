@@ -115,7 +115,7 @@ func (e *Equinix) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = e.inventory.Publish(ctx, fw, vendors.DstPath(fw))
+		err = e.inventory.Publish(ctx, fw)
 		if err != nil {
 			return err
 		}

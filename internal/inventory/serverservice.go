@@ -8,6 +8,7 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -73,27 +74,10 @@ func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions, l
 	return client, nil
 }
 
-// getArtifactsURL returns the https artifactsURL for the given s3 dstURL
-func (s *ServerService) getArtifactsURL(dstURL string) (string, error) {
-	aURL, err := url.Parse(s.artifactsURL)
-	if err != nil {
-		return "", nil
-	}
-
-	dURL, err := url.Parse(dstURL)
-	if err != nil {
-		return "", nil
-	}
-
-	aURL.Path = dURL.Path
-
-	return aURL.String(), nil
-}
-
 // nolint:gocyclo // silence cyclo warning
 // Publish adds firmware data to Hollow's ServerService
-func (s *ServerService) Publish(ctx context.Context, cfv *serverservice.ComponentFirmwareVersion, dstURL string) error {
-	artifactsURL, err := s.getArtifactsURL(dstURL)
+func (s *ServerService) Publish(ctx context.Context, cfv *serverservice.ComponentFirmwareVersion) error {
+	artifactsURL, err := url.JoinPath(s.artifactsURL, vendors.DstPath(cfv))
 	if err != nil {
 		return err
 	}

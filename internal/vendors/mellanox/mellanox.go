@@ -121,7 +121,7 @@ func (m *Mellanox) Sync(ctx context.Context) error {
 		// Clean up tmpDir after copying the extracted firmware to dst.
 		os.RemoveAll(tmpDir)
 
-		err = m.inventory.Publish(ctx, fw, vendors.DstPath(fw))
+		err = m.inventory.Publish(ctx, fw)
 		if err != nil {
 			return err
 		}

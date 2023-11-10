@@ -73,17 +73,15 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 	for _, fw := range a.firmwares {
 		dstPath := vendors.DstPath(fw)
 
-		dstURL := "s3://" + a.dstCfg.Bucket + "/" + dstPath
-
 		a.logger.WithFields(
 			logrus.Fields{
 				"src": fw.UpstreamURL,
-				"dst": dstURL,
+				"dst": dstPath,
 			},
 		).Info("sync ASRockRack")
 
 		// In case the file already exists in dst, don't verify/copy it
-		if exists, _ := rcloneFs.FileExists(ctx, a.dstFs, vendors.DstPath(fw)); exists {
+		if exists, _ := rcloneFs.FileExists(ctx, a.dstFs, dstPath); exists {
 			a.logger.WithFields(
 				logrus.Fields{
 					"filename": fw.Filename,
@@ -105,7 +103,7 @@ func (a *ASRockRack) Sync(ctx context.Context) error {
 			return err
 		}
 
-		err = a.inventory.Publish(ctx, fw, dstURL)
+		err = a.inventory.Publish(ctx, fw)
 		if err != nil {
 			return err
 		}

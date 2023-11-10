@@ -3,11 +3,11 @@ package inventory
 import (
 	"context"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -27,64 +27,50 @@ type ServerService struct {
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, serverServiceURL, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
-	if artifactsURL == "" {
-		return nil, errors.New("missing artifacts URL")
-	}
+func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
+	var client *serverservice.Client
 
-	clientSecret := os.Getenv("SERVERSERVICE_CLIENT_SECRET")
+	var err error
 
-	if clientSecret == "" {
-		return nil, errors.New("missing server service client secret")
-	}
-
-	clientID := os.Getenv("SERVERSERVICE_CLIENT_ID")
-
-	if clientID == "" {
-		return nil, errors.New("missing server service client id")
-	}
-
-	oidcProviderEndpoint := os.Getenv("SERVERSERVICE_OIDC_PROVIDER_ENDPOINT")
-
-	if oidcProviderEndpoint == "" {
-		return nil, errors.New("missing server service oidc provider endpoint")
-	}
-
-	provider, err := oidc.NewProvider(ctx, oidcProviderEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	audience := os.Getenv("SERVERSERVICE_AUDIENCE_ENDPOINT")
-
-	if audience == "" {
-		return nil, errors.New("missing server service audience URL")
-	}
-
-	scopes := []string{
-		"create:server-component-firmwares",
-		"read:server-component-firmwares",
-		"update:server-component-firmwares",
-	}
-
-	oauthConfig := clientcredentials.Config{
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
-		TokenURL:       provider.Endpoint().TokenURL,
-		Scopes:         scopes,
-		EndpointParams: url.Values{"audience": {audience}},
-	}
-
-	c, err := serverservice.NewClient(serverServiceURL, oauthConfig.Client(ctx))
-	if err != nil {
-		return nil, err
+	if !cfg.DisableOAuth {
+		client, err = newClientWithOAuth(ctx, cfg, logger)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		client, err = serverservice.NewClientWithToken("fake", cfg.Endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &ServerService{
 		artifactsURL: artifactsURL,
-		client:       c,
+		client:       client,
 		logger:       logger,
 	}, nil
+}
+
+func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions, logger *logrus.Logger) (client *serverservice.Client, err error) {
+	provider, err := oidc.NewProvider(ctx, cfg.OidcIssuerEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	oauthConfig := clientcredentials.Config{
+		ClientID:       cfg.OidcClientID,
+		ClientSecret:   cfg.OidcClientSecret,
+		TokenURL:       provider.Endpoint().TokenURL,
+		Scopes:         cfg.OidcClientScopes,
+		EndpointParams: url.Values{"audience": {cfg.OidcAudienceEndpoint}},
+	}
+
+	client, err = serverservice.NewClient(cfg.EndpointURL.String(), oauthConfig.Client(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // getArtifactsURL returns the https artifactsURL for the given s3 dstURL

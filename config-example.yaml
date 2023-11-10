@@ -1,0 +1,4 @@
+log_level: debug
+serverservice_url: "http://localhost:8000"
+artifacts_url: "https://example.com"
+firmware_manifest_url: "https://example.com/modeldata.json"

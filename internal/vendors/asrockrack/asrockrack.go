@@ -2,7 +2,6 @@ package asrockrack
 
 import (
 	"context"
-	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
@@ -28,38 +27,9 @@ type ASRockRack struct {
 	tmpFs     rcloneFs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
-	// RepositoryURL required
-	if cfgSyncer.RepositoryURL == "" {
-		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
-	// TODO: For now set this configuration from env vars but ideally this should come from
-	// somewhere else. Maybe a per provider config?
-	srcS3Config := &config.S3Bucket{
-		Region:    os.Getenv("ASRR_S3_REGION"),
-		Endpoint:  os.Getenv("ASRR_S3_ENDPOINT"),
-		Bucket:    os.Getenv("ASRR_S3_BUCKET"),
-		AccessKey: os.Getenv("ASRR_S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("ASRR_S3_SECRET_KEY"),
-	}
-
-	// parse S3 endpoint and bucket from cfgSyncer.RepositoryURL
-	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
-	if err != nil {
-		return nil, err
-	}
-
-	dstS3Config := &config.S3Bucket{
-		Region:    cfgSyncer.RepositoryRegion,
-		Endpoint:  s3DstEndpoint,
-		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
-	}
-
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfg *config.Configuration, logger *logrus.Logger) (vendors.Vendor, error) {
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfg.ServerserviceOptions, cfg.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +37,12 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	// init rclone filesystems for tmp, dst and src files
 	vendors.SetRcloneLogging(logger)
 
-	dstFs, err := vendors.InitS3Fs(ctx, dstS3Config, "/")
+	dstFs, err := vendors.InitS3Fs(ctx, cfg.FirmwareRepository, "/")
 	if err != nil {
 		return nil, err
 	}
 
-	srcFs, err := vendors.InitS3Fs(ctx, srcS3Config, "/")
+	srcFs, err := vendors.InitS3Fs(ctx, cfg.AsRockRackRepository, "/")
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +57,8 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		logger:    logger,
 		metrics:   vendors.NewMetrics(),
 		inventory: i,
-		srcCfg:    srcS3Config,
-		dstCfg:    dstS3Config,
+		srcCfg:    cfg.AsRockRackRepository,
+		dstCfg:    cfg.FirmwareRepository,
 		srcFs:     srcFs,
 		dstFs:     dstFs,
 		tmpFs:     tmpFs,

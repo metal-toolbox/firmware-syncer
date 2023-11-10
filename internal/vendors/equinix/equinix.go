@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -36,35 +35,16 @@ type Equinix struct {
 	tmpFs     fs.Fs
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfgSyncer *config.Syncer, logger *logrus.Logger) (vendors.Vendor, error) {
-	// RepositoryURL required
-	if cfgSyncer.RepositoryURL == "" {
-		return nil, errors.Wrap(config.ErrProviderAttributes, "RepositoryURL not defined")
-	}
-
+func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfg *config.Configuration, logger *logrus.Logger) (vendors.Vendor, error) {
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_OPENBMC_TOKEN")},
+		&oauth2.Token{AccessToken: cfg.GithubOpenBmcToken},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
 	ghClient := github.NewClient(tc)
 
-	// parse S3 endpoint and bucket from cfgSyncer.RepositoryURL
-	s3DstEndpoint, s3DstBucket, err := config.ParseRepositoryURL(cfgSyncer.RepositoryURL)
-	if err != nil {
-		return nil, err
-	}
-
-	dstS3Config := &config.S3Bucket{
-		Region:    cfgSyncer.RepositoryRegion,
-		Endpoint:  s3DstEndpoint,
-		Bucket:    s3DstBucket,
-		AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		SecretKey: os.Getenv("S3_SECRET_KEY"),
-	}
-
 	// init inventory
-	i, err := inventory.New(ctx, cfgSyncer.ServerServiceURL, cfgSyncer.ArtifactsURL, logger)
+	i, err := inventory.New(ctx, cfg.ServerserviceOptions, cfg.ArtifactsURL, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +52,7 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 	// init rclone filesystems for tmp and dst files
 	vendors.SetRcloneLogging(logger)
 
-	dstFs, err := vendors.InitS3Fs(ctx, dstS3Config, "/")
+	dstFs, err := vendors.InitS3Fs(ctx, cfg.FirmwareRepository, "/")
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +68,7 @@ func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersio
 		metrics:   vendors.NewMetrics(),
 		inventory: i,
 		ghClient:  ghClient,
-		dstCfg:    dstS3Config,
+		dstCfg:    cfg.FirmwareRepository,
 		dstFs:     dstFs,
 		tmpFs:     tmpFs,
 	}, nil

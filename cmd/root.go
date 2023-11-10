@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/app"
+	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 	"github.com/spf13/cobra"
 )
 
 var (
-	debug    bool
-	trace    bool
-	dryRun   bool
-	cfgFile  string
-	logLevel int // 0 - info, 1 - debug, 2 - trace
+	cfgFile       string
+	inventoryKind string
+	logLevel      string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -26,15 +26,13 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		syncerApp, err := app.New(cfgFile, logLevel)
+		syncerApp, err := app.New(cmd.Context(), types.InventoryKind(inventoryKind), cfgFile, logLevel)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
-		err = syncerApp.SyncFirmwares(cmd.Context(), dryRun)
+		err = syncerApp.SyncFirmwares(cmd.Context())
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			syncerApp.Logger.Fatal(err)
 		}
 	},
 }
@@ -52,22 +50,8 @@ func Execute() {
 	}
 }
 
-func setLogLevel() {
-	logLevel = app.LogLevelInfo
-
-	if debug {
-		logLevel = app.LogLevelDebug
-	}
-
-	if trace {
-		logLevel = app.LogLevelTrace
-	}
-}
-
 func init() {
-	cobra.OnInitialize(setLogLevel)
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug logging (can be used with --trace)")
-	rootCmd.PersistentFlags().BoolVarP(&trace, "trace", "t", false, "Enable trace logging (can be used with --debug)")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "set logging level - debug, trace")
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "c", "", "Syncer configuration file")
-	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "", false, "Don't sync anything, just initialize")
+	rootCmd.PersistentFlags().StringVar(&inventoryKind, "inventory", "serverservice", "Inventory to publish firmwares.")
 }

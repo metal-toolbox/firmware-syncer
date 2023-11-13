@@ -14,6 +14,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20230717121556-5eb9915a8a5a
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v56 v56.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/mitchellh/mapstructure v1.5.0

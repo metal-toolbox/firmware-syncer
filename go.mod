@@ -18,7 +18,7 @@ require (
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.17.0
-	github.com/rclone/rclone v1.63.1
+	github.com/rclone/rclone v1.64.2
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.16.2
@@ -29,7 +29,7 @@ require (
 
 require (
 	github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
 	github.com/abbot/go-http-auth v0.4.0 // indirect
 	github.com/aws/aws-sdk-go v1.44.314 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.1 // indirect
-	github.com/go-chi/chi/v5 v5.0.8 // indirect
+	github.com/go-chi/chi/v5 v5.0.10 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -93,7 +93,7 @@ require (
 	github.com/nats-io/nats.go v1.30.2 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/ncw/swift/v2 v2.0.1 // indirect
+	github.com/ncw/swift/v2 v2.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/xattr v0.4.9 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -105,7 +105,7 @@ require (
 	github.com/rfjakob/eme v1.1.2 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/shirou/gopsutil/v3 v3.23.5 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.6 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect

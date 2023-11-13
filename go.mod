@@ -21,8 +21,8 @@ require (
 	github.com/rclone/rclone v1.63.1
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
-	go.hollow.sh/serverservice v0.16.0
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
+	go.hollow.sh/serverservice v0.16.2
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/net v0.17.0
 	golang.org/x/oauth2 v0.11.0
 )
@@ -119,7 +119,7 @@ require (
 	github.com/volatiletech/null/v8 v8.1.2 // indirect
 	github.com/volatiletech/randomize v0.0.1 // indirect
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible // indirect
-	github.com/volatiletech/sqlboiler/v4 v4.14.2 // indirect
+	github.com/volatiletech/sqlboiler/v4 v4.15.0 // indirect
 	github.com/volatiletech/strmangle v0.0.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.hollow.sh/toolbox v0.6.1 // indirect

@@ -51,7 +51,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "set logging level - debug, trace")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "", "set logging level - info, debug, trace")
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "c", "", "Syncer configuration file")
 	rootCmd.PersistentFlags().StringVar(&inventoryKind, "inventory", "serverservice", "Inventory to publish firmwares.")
 }

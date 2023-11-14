@@ -48,7 +48,12 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 		return nil, err
 	}
 
-	switch types.LogLevel(logLevel) {
+	// CLI parameter takes precedence over config and env vars
+	if logLevel != "" {
+		app.Config.LogLevel = logLevel
+	}
+
+	switch types.LogLevel(app.Config.LogLevel) {
 	case types.LogLevelDebug:
 		app.Logger.Level = logrus.DebugLevel
 	case types.LogLevelTrace:
@@ -182,8 +187,6 @@ func (a *App) LoadConfiguration(cfgFile string, inventoryKind types.InventoryKin
 			return errors.Wrap(config.ErrConfig, "ReadConfig error: "+err.Error())
 		}
 	}
-
-	a.v.SetDefault("log.level", "info")
 
 	if err := a.envBindVars(); err != nil {
 		return errors.Wrap(config.ErrConfig, "env var bind error: "+err.Error())

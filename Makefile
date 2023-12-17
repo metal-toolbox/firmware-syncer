@@ -10,6 +10,11 @@ REPO := "https://github.com/metal-toolbox/firmware-syncer.git"
 
 .DEFAULT_GOAL := help
 
+## Generate mocks
+mocks:
+	go get go.uber.org/mock@v0.3.0
+	go install go.uber.org/mock/mockgen@v0.3.0
+	go generate ./...
 
 ## Go test
 test:

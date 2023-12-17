@@ -14,7 +14,6 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20230717121556-5eb9915a8a5a
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
-	github.com/google/go-github/v56 v56.0.0
 	github.com/google/uuid v1.4.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/mitchellh/mapstructure v1.5.0
@@ -23,7 +22,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.16.2
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+	go.uber.org/mock v0.3.0
 	golang.org/x/net v0.18.0
 	golang.org/x/oauth2 v0.14.0
 )
@@ -136,7 +135,8 @@ require (
 	gocloud.dev v0.33.0 // indirect
 	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/crypto v0.15.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
+	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

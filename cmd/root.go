@@ -30,15 +30,14 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		syncerApp.Logger.Info("Sync starting")
 		err = syncerApp.SyncFirmwares(cmd.Context())
 		if err != nil {
 			syncerApp.Logger.Fatal(err)
 		}
+		syncerApp.Logger.Info("Sync complete")
 	},
-}
-
-func NewRootCmd() *cobra.Command {
-	return rootCmd
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

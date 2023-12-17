@@ -47,6 +47,7 @@ func TestServerServicePublish(t *testing.T) {
 	)
 
 	mock := httptest.NewServer(handler)
+	defer mock.Close()
 
 	cfg := config.ServerserviceOptions{
 		Endpoint:     mock.URL,

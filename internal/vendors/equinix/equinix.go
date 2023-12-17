@@ -5,139 +5,61 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v53/github"
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-	"golang.org/x/oauth2"
-
 	"github.com/pkg/errors"
-	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
 const GithubDownloadTimeout = 300
 
-// Equinix implements the Vendor interface methods to retrieve Equinix OpenBMC firmware files
-type Equinix struct {
-	firmwares []*serverservice.ComponentFirmwareVersion
-	logger    *logrus.Logger
-	metrics   *vendors.Metrics
-	inventory *inventory.ServerService
-	ghClient  *github.Client
-	dstCfg    *config.S3Bucket
-	dstFs     fs.Fs
-	tmpFs     fs.Fs
-}
-
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfg *config.Configuration, logger *logrus.Logger) (vendors.Vendor, error) {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cfg.GithubOpenBmcToken},
+func NewGitHubClient(ctx context.Context, githubOpenBmcToken string) *github.Client {
+	tokenSource := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: githubOpenBmcToken},
 	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	ghClient := github.NewClient(tc)
-
-	// init inventory
-	i, err := inventory.New(ctx, cfg.ServerserviceOptions, cfg.ArtifactsURL, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	// init rclone filesystems for tmp and dst files
-	vendors.SetRcloneLogging(logger)
-
-	dstFs, err := vendors.InitS3Fs(ctx, cfg.FirmwareRepository, "/")
-	if err != nil {
-		return nil, err
-	}
-
-	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Equinix{
-		firmwares: firmwares,
-		logger:    logger,
-		metrics:   vendors.NewMetrics(),
-		inventory: i,
-		ghClient:  ghClient,
-		dstCfg:    cfg.FirmwareRepository,
-		dstFs:     dstFs,
-		tmpFs:     tmpFs,
-	}, nil
+	tokenClient := oauth2.NewClient(ctx, tokenSource)
+	return github.NewClient(tokenClient)
 }
 
-func (e *Equinix) Stats() *vendors.Metrics {
-	return e.metrics
+type GitHubDownloader struct {
+	logger *logrus.Logger
+	client *github.Client
 }
 
-func (e *Equinix) Sync(ctx context.Context) error {
-	for _, fw := range e.firmwares {
-		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, e.dstFs, vendors.DstPath(fw)); exists {
-			e.logger.WithFields(
-				logrus.Fields{
-					"filename": fw.Filename,
-				},
-			).Debug("firmware already exists at dst")
-
-			continue
-		}
-
-		err := e.getFileFromGithub(ctx, fw)
-		if err != nil {
-			return err
-		}
-
-		// Verify file checksum
-		tmpFilename := e.tmpFs.Root() + "/" + fw.Filename
-		if !vendors.ValidateChecksum(tmpFilename, fw.Checksum) {
-			return errors.Wrap(vendors.ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
-		}
-
-		e.logger.WithFields(
-			logrus.Fields{
-				"src": fw.UpstreamURL,
-				"dst": vendors.DstPath(fw),
-			},
-		).Info("sync Equinix")
-
-		// Copy from tmpfs to dstfs
-		err = operations.CopyFile(ctx, e.dstFs, e.tmpFs, vendors.DstPath(fw), fw.Filename)
-		if err != nil {
-			return err
-		}
-
-		err = e.inventory.Publish(ctx, fw)
-		if err != nil {
-			return err
-		}
+func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.Downloader {
+	return &GitHubDownloader{
+		logger: logger,
+		client: client,
 	}
-
-	return nil
 }
 
-func (e *Equinix) getFileFromGithub(ctx context.Context, fw *serverservice.ComponentFirmwareVersion) error {
-	owner, repo, tag, filename, err := parseGithubReleaseURL(fw.UpstreamURL)
+func (g *GitHubDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: downloadDir})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	release, _, err := e.ghClient.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
+	owner, repo, tag, filename, err := parseGithubReleaseURL(firmware.UpstreamURL)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	release, _, err := g.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
+	if err != nil {
+		return "", err
 	}
 
 	asset, err := getAssetByName(filename, release.Assets)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Give enough time for the client to download the binary file.
@@ -145,19 +67,18 @@ func (e *Equinix) getFileFromGithub(ctx context.Context, fw *serverservice.Compo
 		Timeout: time.Second * GithubDownloadTimeout,
 	}
 
-	rc, _, err := e.ghClient.Repositories.DownloadReleaseAsset(ctx, owner, repo, *asset.ID, redirectClient)
+	rc, _, err := g.client.Repositories.DownloadReleaseAsset(ctx, owner, repo, *asset.ID, redirectClient)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer rc.Close()
 
-	// Copy downloaded file to tmpFs for checksum verification and later upload to dst
-	_, err = operations.Rcat(ctx, e.tmpFs, fw.Filename, rc, time.Now(), nil)
+	_, err = operations.Rcat(ctx, tmpFs, firmware.Filename, rc, time.Now(), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return path.Join(downloadDir, firmware.Filename), nil
 }
 
 func parseGithubReleaseURL(ghURL string) (owner, repo, release, filename string, err error) {

@@ -48,6 +48,12 @@ var (
 	ErrCreatingTmpDir  = errors.New("error creating tmp dir")
 )
 
+//go:generate mockgen -source=downloader.go -destination=mocks/downloader.go Downloader
+
+type Downloader interface {
+	Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error)
+}
+
 // DownloaderStats includes fields for stats on file/object transfer for Downloader
 type DownloaderStats struct {
 	BytesTransferred   int64
@@ -347,4 +353,69 @@ func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum strin
 	}
 
 	return out, nil
+}
+
+type ArchiveDownloader struct {
+	logger *logrus.Logger
+}
+
+func NewArchiveDownloader(logger *logrus.Logger) Downloader {
+	return &ArchiveDownloader{logger: logger}
+}
+
+func (m *ArchiveDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	archivePath, err := DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
+	if err != nil {
+		return "", err
+	}
+
+	m.logger.WithField("archivePath", archivePath).Debug("Archive downloaded.")
+	m.logger.Debug("Extracting firmware from archive")
+
+	fwFile, err := ExtractFromZipArchive(archivePath, firmware.Filename, "")
+	if err != nil {
+		return "", err
+	}
+
+	return fwFile.Name(), nil
+}
+
+type RcloneDownloader struct {
+	logger *logrus.Logger
+}
+
+func NewRcloneDownloader(logger *logrus.Logger) Downloader {
+	return &RcloneDownloader{logger: logger}
+}
+
+func (r *RcloneDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	return DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
+}
+
+type S3Downloader struct {
+	logger *logrus.Logger
+	s3Fs   rcloneFs.Fs
+}
+
+func NewS3Downloader(logger *logrus.Logger, s3Fs rcloneFs.Fs) Downloader {
+	return &S3Downloader{logger: logger, s3Fs: s3Fs}
+}
+
+func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	tmpFS, err := InitLocalFs(ctx, &LocalFsConfig{Root: downloadDir})
+	if err != nil {
+		return "", err
+	}
+
+	err = rcloneOperations.CopyFile(ctx, tmpFS, s.s3Fs, firmware.Filename, SrcPath(firmware))
+	if err != nil {
+		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
+			msg := fmt.Sprintf("%s: %s", err, firmware.Filename)
+			return "", errors.Wrap(ErrCopy, msg)
+		}
+
+		return "", err
+	}
+
+	return path.Join(downloadDir, firmware.Filename), nil
 }

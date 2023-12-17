@@ -13,16 +13,17 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	runtime "github.com/banzaicloud/logrus-runtime-formatter"
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
+	"github.com/metal-toolbox/firmware-syncer/internal/logging"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors/asrockrack"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors/dell"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/equinix"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors/intel"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors/mellanox"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
 	"github.com/metal-toolbox/firmware-syncer/pkg/types"
+)
+
+const (
+	VendorEquinix = "equinix"
 )
 
 // App holds attributes for the firmware-syncer application
@@ -36,14 +37,13 @@ type App struct {
 	vendors []vendors.Vendor
 }
 
-// nolint:gocyclo // Instantiating new app is cyclomatic
 // New returns a new instance of the firmware-syncer app
 func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLevel string) (*App, error) {
 	app := &App{
 		v:      viper.New(),
 		Config: &config.Configuration{},
-		Logger: logrus.New(),
 	}
+
 	if err := app.LoadConfiguration(cfgFile, inventoryKind); err != nil {
 		return nil, err
 	}
@@ -53,23 +53,7 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 		app.Config.LogLevel = logLevel
 	}
 
-	switch types.LogLevel(app.Config.LogLevel) {
-	case types.LogLevelDebug:
-		app.Logger.Level = logrus.DebugLevel
-	case types.LogLevelTrace:
-		app.Logger.Level = logrus.TraceLevel
-	default:
-		app.Logger.Level = logrus.InfoLevel
-	}
-
-	runtimeFormatter := &runtime.Formatter{
-		ChildFormatter: &logrus.JSONFormatter{},
-		File:           true,
-		Line:           true,
-		BaseNameOnly:   true,
-	}
-
-	app.Logger.SetFormatter(runtimeFormatter)
+	app.Logger = logging.NewLogger(app.Config.LogLevel)
 
 	// Load firmware manifest
 	firmwaresByVendor, err := config.LoadFirmwareManifest(ctx, app.Config.FirmwareManifestURL)
@@ -78,72 +62,49 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 		return nil, err
 	}
 
+	inventoryClient, err := inventory.New(ctx, app.Config.ServerserviceOptions, app.Config.ArtifactsURL, app.Logger)
+	if err != nil {
+		return nil, err
+	}
+
+	dstFs, err := vendors.InitS3Fs(ctx, app.Config.FirmwareRepository, "/")
+	if err != nil {
+		return nil, err
+	}
+
+	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: os.TempDir()})
+	if err != nil {
+		return nil, err
+	}
+
 	for vendor, firmwares := range firmwaresByVendor {
+		var downloader vendors.Downloader
+
 		switch vendor {
 		case common.VendorDell:
-			var dup vendors.Vendor
-
-			dup, err = dell.NewDUP(ctx, firmwares, app.Config, app.Logger)
-			if err != nil {
-				app.Logger.Error("Failed to initialize Dell vendor: " + err.Error())
-				return nil, err
-			}
-
-			app.vendors = append(app.vendors, dup)
+			downloader = vendors.NewRcloneDownloader(app.Logger)
 		case common.VendorAsrockrack:
-			var asrr vendors.Vendor
-
-			asrr, err = asrockrack.New(ctx, firmwares, app.Config, app.Logger)
+			s3Fs, err := vendors.InitS3Fs(ctx, app.Config.AsRockRackRepository, "/")
 			if err != nil {
-				app.Logger.Error("Failed to initialize ASRockRack vendor:" + err.Error())
 				return nil, err
 			}
-
-			app.vendors = append(app.vendors, asrr)
+			downloader = vendors.NewS3Downloader(app.Logger, s3Fs)
 		case common.VendorSupermicro:
-			var sm vendors.Vendor
-
-			sm, err = supermicro.New(ctx, firmwares, app.Config, app.Logger)
-			if err != nil {
-				app.Logger.Error("Failed to initialize Supermicro vendor: " + err.Error())
-				return nil, err
-			}
-
-			app.vendors = append(app.vendors, sm)
+			downloader = supermicro.NewSupermicroDownloader(app.Logger)
 		case common.VendorMellanox:
-			var mlx vendors.Vendor
-
-			mlx, err = mellanox.New(ctx, firmwares, app.Config, app.Logger)
-			if err != nil {
-				app.Logger.Error("Failed to initialize Mellanox vendor: " + err.Error())
-				return nil, err
-			}
-
-			app.vendors = append(app.vendors, mlx)
+			downloader = vendors.NewArchiveDownloader(app.Logger)
 		case common.VendorIntel:
-			var i vendors.Vendor
-
-			i, err = intel.New(ctx, firmwares, app.Config, app.Logger)
-			if err != nil {
-				app.Logger.Error("Failed to initialize Intel vendor: " + err.Error())
-				return nil, err
-			}
-
-			app.vendors = append(app.vendors, i)
-		case "equinix":
-			var e vendors.Vendor
-
-			e, err = equinix.New(ctx, firmwares, app.Config, app.Logger)
-			if err != nil {
-				app.Logger.Error("Failed to initialize Equinix vendor: " + err.Error())
-				return nil, err
-			}
-
-			app.vendors = append(app.vendors, e)
+			downloader = vendors.NewArchiveDownloader(app.Logger)
+		case VendorEquinix:
+			ghClient := equinix.NewGitHubClient(ctx, app.Config.GithubOpenBmcToken)
+			downloader = equinix.NewGitHubDownloader(app.Logger, ghClient)
 		default:
 			app.Logger.Error("Vendor not supported: " + vendor)
 			continue
 		}
+
+		syncer := vendors.NewSyncer(dstFs, tmpFs, downloader, inventoryClient, firmwares, app.Logger)
+		app.vendors = append(app.vendors, syncer)
 	}
 
 	return app, nil
@@ -154,7 +115,7 @@ func (a *App) SyncFirmwares(ctx context.Context) error {
 	for _, v := range a.vendors {
 		err := v.Sync(ctx)
 		if err != nil {
-			a.Logger.Error("Failed to sync: " + err.Error())
+			a.Logger.WithError(err).Error("Failed to sync vendor")
 		}
 	}
 

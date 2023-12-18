@@ -25,6 +25,7 @@ type Syncer struct {
 	inventory  inventory.ServerService
 }
 
+// NewSyncer creates a new Syncer.
 func NewSyncer(
 	dstFs fs.Fs,
 	tmpFs fs.Fs,
@@ -45,6 +46,9 @@ func NewSyncer(
 	}
 }
 
+// Sync will synchronize the firmwares with the destination file system and inventory.
+// Files that do not exist on the destination will be downloaded from their source and uploaded to the destination.
+// Information about the firmware file will be updated using the inventory client.
 func (s *Syncer) Sync(ctx context.Context) (err error) {
 	for _, firmware := range s.firmwares {
 		if err = s.syncFirmware(ctx, firmware); err != nil {
@@ -56,6 +60,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	return nil
 }
 
+// syncFirmware does the synchronization for the given firmware.
 func (s *Syncer) syncFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
 	destPath := DstPath(firmware)
 

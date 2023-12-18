@@ -23,10 +23,13 @@ type Downloader struct {
 	logger *logrus.Logger
 }
 
+// NewSupermicroDownloader creates a new Downloader for downloading files from Supermicro.
 func NewSupermicroDownloader(logger *logrus.Logger) vendors.Downloader {
 	return &Downloader{logger: logger}
 }
 
+// Download will download a file for the given firmware to the given downloadDir,
+// and will return the full path to the downloaded file.
 func (d *Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	urlSplit := strings.Split(firmware.UpstreamURL, "=")
 

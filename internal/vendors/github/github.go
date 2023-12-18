@@ -22,6 +22,7 @@ import (
 
 const DownloadTimeout = 300
 
+// NewGitHubClient creates a new github.Client.
 func NewGitHubClient(ctx context.Context, githubOpenBmcToken string) *github.Client {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: githubOpenBmcToken},
@@ -36,6 +37,7 @@ type Downloader struct {
 	client *github.Client
 }
 
+// NewGitHubDownloader creates a new vendors.Downloader that can download content from GitHub.
 func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.Downloader {
 	return &Downloader{
 		logger: logger,
@@ -43,6 +45,8 @@ func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.D
 	}
 }
 
+// Download will download the file for the given firmware from GitHub into the downloadDir,
+// and returns the full path to the downloaded file.
 func (d *Downloader) Download(
 	ctx context.Context,
 	downloadDir string,

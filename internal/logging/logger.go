@@ -2,10 +2,12 @@ package logging
 
 import (
 	runtime "github.com/banzaicloud/logrus-runtime-formatter"
-	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 	"github.com/sirupsen/logrus"
+
+	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 )
 
+// NewLogger creates a new logrus.Logger with the given log level.
 func NewLogger(logLevel string) *logrus.Logger {
 	logger := logrus.New()
 

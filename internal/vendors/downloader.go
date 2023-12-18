@@ -16,7 +16,6 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 
-	rcloneHttp "github.com/rclone/rclone/backend/http"
 	rcloneLocal "github.com/rclone/rclone/backend/local"
 	rcloneS3 "github.com/rclone/rclone/backend/s3"
 	rcloneFs "github.com/rclone/rclone/fs"
@@ -51,7 +50,10 @@ var (
 
 //go:generate mockgen -source=downloader.go -destination=mocks/downloader.go Downloader
 
+// Downloader is something that can download a file for a given firmware.
 type Downloader interface {
+	// Download takes in the directory to download the file to, and the firmware to be downloaded.
+	// It should also return the full path to the downloaded file.
 	Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error)
 }
 
@@ -86,71 +88,7 @@ func DstPath(fw *serverservice.ComponentFirmwareVersion) string {
 	return path.Join(fw.Vendor, fw.Filename)
 }
 
-func VerifyFile(ctx context.Context, tmpFs, srcFs rcloneFs.Fs, fw *serverservice.ComponentFirmwareVersion) error {
-	// create local tmp directory
-	tmpDir, err := os.MkdirTemp(tmpFs.Root(), "verify-")
-	if err != nil {
-		return errors.Wrap(ErrCreatingTmpDir, err.Error())
-	}
-
-	defer os.RemoveAll(tmpDir)
-
-	dstPath := path.Join(path.Base(tmpDir), fw.Filename)
-
-	switch {
-	case strings.HasPrefix(fw.UpstreamURL, "s3://"):
-		err = rcloneOperations.CopyFile(ctx, tmpFs, srcFs, dstPath, SrcPath(fw))
-	case strings.HasPrefix(fw.UpstreamURL, "http://"), strings.HasPrefix(fw.UpstreamURL, "https://"):
-		_, err = rcloneOperations.CopyURL(ctx, tmpFs, dstPath, fw.UpstreamURL, false, false, false)
-	}
-
-	if err != nil {
-		if errors.Is(err, rcloneFs.ErrorObjectNotFound) {
-			return errors.Wrap(ErrCopy, err.Error()+" :"+fw.Filename)
-		}
-
-		return errors.Wrap(ErrCopy, err.Error())
-	}
-
-	tmpFilename := path.Join(tmpFs.Root(), dstPath)
-
-	if !ValidateChecksum(tmpFilename, fw.Checksum) {
-		return errors.Wrap(ErrChecksumValidate, fmt.Sprintf("tmpFilename: %s, expected checksum: %s", tmpFilename, fw.Checksum))
-	}
-
-	return nil
-}
-
-// initHttpFs initializes and returns a rcloneFs.Fs interface that can be used for Copy, Sync operations
-// the Fs is initialized based the urlHost, urlPath parameters
-//
-// httpURL: the http endpoint which is expected to be the root/top level directory from where files are to be copied from/to
-//
-//	this can be a http index or a URL endpoint from which files are to be downloaded.
-func InitHTTPFs(ctx context.Context, httpURL string) (rcloneFs.Fs, error) {
-	// parse the URL into host and path parts, as expected by the rclone fs lib
-	hostPart, pathPart, err := SplitURLPath(httpURL)
-	if err != nil {
-		return nil, err
-	}
-
-	// https://github.com/rclone/rclone/blob/master/backend/http/http.go#L36
-	opts := rcloneConfigmap.Simple{
-		"type":    "http",
-		"no_head": "true",
-		"url":     hostPart,
-	}
-
-	fs, err := rcloneHttp.NewFs(ctx, httpURL, pathPart, opts)
-
-	if err != nil && !errors.Is(err, rcloneFs.ErrorIsFile) {
-		return nil, errors.Wrap(ErrInitHTTPDownloader, err.Error())
-	}
-
-	return fs, nil
-}
-
-// initLocalFs initializes and returns a rcloneFs.Fs interface on the local filesystem
+// InitLocalFs initializes and returns a rcloneFs.Fs interface on the local filesystem
 func InitLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 	if cfg == nil {
 		return nil, errors.Wrap(ErrFileStoreConfig, "got nil local fs config")
@@ -179,7 +117,7 @@ func InitLocalFs(ctx context.Context, cfg *LocalFsConfig) (rcloneFs.Fs, error) {
 	return fs, nil
 }
 
-// initS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
+// InitS3Fs initializes and returns a rcloneFs.Fs interface on an s3 store
 //
 // root: the directory mounted as the root/top level directory of the returned fs
 func InitS3Fs(ctx context.Context, cfg *config.S3Bucket, root string) (rcloneFs.Fs, error) {
@@ -360,10 +298,13 @@ type ArchiveDownloader struct {
 	logger *logrus.Logger
 }
 
+// NewArchiveDownloader creates a new ArchiveDownloader.
 func NewArchiveDownloader(logger *logrus.Logger) Downloader {
 	return &ArchiveDownloader{logger: logger}
 }
 
+// Download will download the file for the given firmware into the given downloadDir,
+// and return the full path to the downloaded file.
 func (m *ArchiveDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	archivePath, err := DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
 	if err != nil {
@@ -385,10 +326,13 @@ type RcloneDownloader struct {
 	logger *logrus.Logger
 }
 
+// NewRcloneDownloader creates a new RcloneDownloader.
 func NewRcloneDownloader(logger *logrus.Logger) Downloader {
 	return &RcloneDownloader{logger: logger}
 }
 
+// Download will download the file for the given firmware into the given downloadDir,
+// and return the full path to the downloaded file.
 func (r *RcloneDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	return DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
 }
@@ -398,10 +342,13 @@ type S3Downloader struct {
 	s3Fs   rcloneFs.Fs
 }
 
+// NewS3Downloader creats a new S3Downloader.
 func NewS3Downloader(logger *logrus.Logger, s3Fs rcloneFs.Fs) Downloader {
 	return &S3Downloader{logger: logger, s3Fs: s3Fs}
 }
 
+// Download will download the file for the given firmware into the given downloadDir,
+// and return the full path to the downloaded file.
 func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	tmpFS, err := InitLocalFs(ctx, &LocalFsConfig{Root: downloadDir})
 	if err != nil {

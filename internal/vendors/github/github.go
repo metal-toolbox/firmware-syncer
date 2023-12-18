@@ -1,4 +1,4 @@
-package equinix
+package github
 
 import (
 	"context"
@@ -41,7 +41,11 @@ func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.D
 	}
 }
 
-func (g *GitHubDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (g *GitHubDownloader) Download(
+	ctx context.Context,
+	downloadDir string,
+	firmware *serverservice.ComponentFirmwareVersion,
+) (string, error) {
 	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: downloadDir})
 	if err != nil {
 		return "", err

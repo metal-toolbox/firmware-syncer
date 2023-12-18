@@ -17,7 +17,7 @@ import (
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/metal-toolbox/firmware-syncer/internal/logging"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors/equinix"
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors/github"
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors/supermicro"
 	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 )
@@ -96,8 +96,8 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 		case common.VendorIntel:
 			downloader = vendors.NewArchiveDownloader(app.Logger)
 		case VendorEquinix:
-			ghClient := equinix.NewGitHubClient(ctx, app.Config.GithubOpenBmcToken)
-			downloader = equinix.NewGitHubDownloader(app.Logger, ghClient)
+			ghClient := github.NewGitHubClient(ctx, app.Config.GithubOpenBmcToken)
+			downloader = github.NewGitHubDownloader(app.Logger, ghClient)
 		default:
 			app.Logger.Error("Vendor not supported: " + vendor)
 			continue

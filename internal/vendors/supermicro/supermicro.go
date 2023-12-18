@@ -9,49 +9,52 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-type SupermicroDownloader struct {
+var ErrMissingFirmwareID = errors.New("upstream URL is missing firmwareID")
+
+type Downloader struct {
 	logger *logrus.Logger
 }
 
-func NewSupermicroDownloader(logger *logrus.Logger) *SupermicroDownloader {
-	return &SupermicroDownloader{logger: logger}
+func NewSupermicroDownloader(logger *logrus.Logger) vendors.Downloader {
+	return &Downloader{logger: logger}
 }
 
-func (s *SupermicroDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (d *Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	urlSplit := strings.Split(firmware.UpstreamURL, "=")
 
 	if len(urlSplit) < 2 {
-		return "", fmt.Errorf("upstream URL is missing firmwareID: %s", firmware.UpstreamURL)
+		return "", errors.Wrap(ErrMissingFirmwareID, firmware.UpstreamURL)
 	}
 
 	firmwareID := urlSplit[1]
 	archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, firmwareID)
 
-	s.logger.WithField("archiveURL", archiveURL).
+	d.logger.WithField("archiveURL", archiveURL).
 		WithField("archiveChecksum", archiveChecksum).
 		Debug("found archive")
 
 	if err != nil {
-		s.logger.WithField("firmwareID", firmwareID).Debug("failed to get archiveURL and archiveChecksum")
+		d.logger.WithField("firmwareID", firmwareID).Debug("failed to get archiveURL and archiveChecksum")
 		return "", err
 	}
 
-	s.logger.Debug("Downloading archive")
+	d.logger.Debug("Downloading archive")
 
 	archivePath, err := vendors.DownloadFirmwareArchive(ctx, downloadDir, archiveURL, archiveChecksum)
 	if err != nil {
 		return "", err
 	}
 
-	s.logger.WithField("archivePath", archivePath).Debug("Archive downloaded.")
-	s.logger.Debug("Extracting firmware from archive")
+	d.logger.WithField("archivePath", archivePath).Debug("Archive downloaded.")
+	d.logger.Debug("Extracting firmware from archive")
 
 	fwFile, err := vendors.ExtractFromZipArchive(archivePath, firmware.Filename, "")
 	if err != nil {

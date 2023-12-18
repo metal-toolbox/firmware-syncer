@@ -3,16 +3,17 @@ package vendors
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 	"github.com/pkg/errors"
 	"github.com/rclone/rclone/fs"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
 
+	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
+
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
-	"os"
 )
 
 type Syncer struct {
@@ -76,7 +77,7 @@ func (s *Syncer) syncFirmware(ctx context.Context, firmware *serverservice.Compo
 		}
 
 		defer func() {
-			if err := os.RemoveAll(downloadDir); err != nil {
+			if err = os.RemoveAll(downloadDir); err != nil {
 				logMsg.WithError(err).Error("Failure to clean up download directory")
 			}
 		}()
@@ -113,5 +114,6 @@ func validateChecksum(file, checksum string) error {
 		msg := fmt.Sprintf("Checksum validation failed: %s, expected checksum: %s", file, checksum)
 		return errors.Wrap(ErrChecksumValidate, msg)
 	}
+
 	return nil
 }

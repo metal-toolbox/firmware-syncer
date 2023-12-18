@@ -11,9 +11,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 
 	rcloneHttp "github.com/rclone/rclone/backend/http"
 	rcloneLocal "github.com/rclone/rclone/backend/local"

@@ -3,16 +3,17 @@ package inventory
 import (
 	"context"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/coreos/go-oidc"
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
+
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
-	"path"
 )
 
 var (
@@ -111,6 +112,7 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.
 		for i := range firmwares {
 			uuids[i] = firmwares[i].UUID.String()
 		}
+
 		uuidLog := strings.Join(uuids, ",")
 
 		s.logger.WithField("uuids", uuidLog).
@@ -129,6 +131,7 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.
 	s.logger.WithField("firmware", newFirmware.Filename).
 		WithField("vendor", newFirmware.Vendor).
 		Debug("Firmware already exists and is up to date")
+
 	return nil
 }
 
@@ -136,27 +139,35 @@ func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) b
 	if firmware1.Vendor != firmware2.Vendor {
 		return true
 	}
+
 	if firmware1.Filename != firmware2.Filename {
 		return true
 	}
+
 	if firmware1.Version != firmware2.Version {
 		return true
 	}
+
 	if firmware1.Component != firmware2.Component {
 		return true
 	}
+
 	if firmware1.Checksum != firmware2.Checksum {
 		return true
 	}
+
 	if firmware1.UpstreamURL != firmware2.UpstreamURL {
 		return true
 	}
+
 	if firmware1.RepositoryURL != firmware2.RepositoryURL {
 		return true
 	}
+
 	if strings.Join(firmware1.Model, ",") != strings.Join(firmware2.Model, ",") {
 		return true
 	}
+
 	return false
 }
 

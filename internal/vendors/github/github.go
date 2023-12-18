@@ -10,38 +10,40 @@ import (
 	"time"
 
 	"github.com/google/go-github/v53/github"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
 	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
+
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-const GithubDownloadTimeout = 300
+const DownloadTimeout = 300
 
 func NewGitHubClient(ctx context.Context, githubOpenBmcToken string) *github.Client {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: githubOpenBmcToken},
 	)
 	tokenClient := oauth2.NewClient(ctx, tokenSource)
+
 	return github.NewClient(tokenClient)
 }
 
-type GitHubDownloader struct {
+type Downloader struct {
 	logger *logrus.Logger
 	client *github.Client
 }
 
 func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.Downloader {
-	return &GitHubDownloader{
+	return &Downloader{
 		logger: logger,
 		client: client,
 	}
 }
 
-func (g *GitHubDownloader) Download(
+func (d *Downloader) Download(
 	ctx context.Context,
 	downloadDir string,
 	firmware *serverservice.ComponentFirmwareVersion,
@@ -56,7 +58,7 @@ func (g *GitHubDownloader) Download(
 		return "", err
 	}
 
-	release, _, err := g.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
+	release, _, err := d.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
 	if err != nil {
 		return "", err
 	}
@@ -68,10 +70,10 @@ func (g *GitHubDownloader) Download(
 
 	// Give enough time for the client to download the binary file.
 	redirectClient := &http.Client{
-		Timeout: time.Second * GithubDownloadTimeout,
+		Timeout: time.Second * DownloadTimeout,
 	}
 
-	rc, _, err := g.client.Repositories.DownloadReleaseAsset(ctx, owner, repo, *asset.ID, redirectClient)
+	rc, _, err := d.client.Repositories.DownloadReleaseAsset(ctx, owner, repo, *asset.ID, redirectClient)
 	if err != nil {
 		return "", err
 	}

@@ -2,22 +2,22 @@ package vendors
 
 import (
 	"context"
-	"testing"
-
-	"github.com/rclone/rclone/fs"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
-
 	"fmt"
-	"github.com/google/uuid"
-	mockinventory "github.com/metal-toolbox/firmware-syncer/internal/inventory/mocks"
-	"github.com/metal-toolbox/firmware-syncer/internal/logging"
-	mockvendors "github.com/metal-toolbox/firmware-syncer/internal/vendors/mocks"
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 	"os"
 	"path"
 	"strings"
+	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/rclone/rclone/fs"
+	"github.com/stretchr/testify/assert"
+	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	"go.uber.org/mock/gomock"
+
+	mockinventory "github.com/metal-toolbox/firmware-syncer/internal/inventory/mocks"
+	"github.com/metal-toolbox/firmware-syncer/internal/logging"
+	mockvendors "github.com/metal-toolbox/firmware-syncer/internal/vendors/mocks"
 )
 
 //go:generate mockgen -source=syncer_test.go -destination=mocks/rclone.go RCloneFS
@@ -50,6 +50,7 @@ func (t *rootDirMatcher) Matches(x interface{}) bool {
 	if !ok {
 		return false
 	}
+
 	return strings.HasPrefix(tempDir, t.root)
 }
 

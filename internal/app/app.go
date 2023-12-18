@@ -37,6 +37,7 @@ type App struct {
 	vendors []vendors.Vendor
 }
 
+// nolint:gocyclo // Instantiating new app is cyclomatic
 // New returns a new instance of the firmware-syncer app
 func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLevel string) (*App, error) {
 	app := &App{
@@ -88,6 +89,7 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 			if err != nil {
 				return nil, err
 			}
+
 			downloader = vendors.NewS3Downloader(app.Logger, s3Fs)
 		case common.VendorSupermicro:
 			downloader = supermicro.NewSupermicroDownloader(app.Logger)

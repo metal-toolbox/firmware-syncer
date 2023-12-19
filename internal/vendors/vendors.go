@@ -16,7 +16,6 @@ const (
 
 type Vendor interface {
 	Sync(ctx context.Context) error
-	Stats() *Metrics
 }
 
 // Metrics is a struct with a key value map under an RWMutex

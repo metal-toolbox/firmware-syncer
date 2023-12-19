@@ -1,4 +1,4 @@
-package equinix
+package github
 
 import (
 	"testing"

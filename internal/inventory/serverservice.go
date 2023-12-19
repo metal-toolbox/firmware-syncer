@@ -3,16 +3,15 @@ package inventory
 import (
 	"context"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/coreos/go-oidc"
-	"github.com/google/uuid"
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2/clientcredentials"
+
+	"github.com/metal-toolbox/firmware-syncer/internal/config"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
@@ -22,19 +21,25 @@ var (
 	ErrServerServiceQuery             = errors.New("server service query failed")
 )
 
-type ServerService struct {
+//go:generate mockgen -source=serverservice.go -destination=mocks/serverservice.go ServerService
+
+type ServerService interface {
+	Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error
+}
+
+type serverService struct {
 	artifactsURL string
 	client       *serverservice.Client
 	logger       *logrus.Logger
 }
 
-func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (*ServerService, error) {
+func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (ServerService, error) {
 	var client *serverservice.Client
 
 	var err error
 
 	if !cfg.DisableOAuth {
-		client, err = newClientWithOAuth(ctx, cfg, logger)
+		client, err = newClientWithOAuth(ctx, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -45,14 +50,14 @@ func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL str
 		}
 	}
 
-	return &ServerService{
+	return &serverService{
 		artifactsURL: artifactsURL,
 		client:       client,
 		logger:       logger,
 	}, nil
 }
 
-func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions, logger *logrus.Logger) (client *serverservice.Client, err error) {
+func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (client *serverservice.Client, err error) {
 	provider, err := oidc.NewProvider(ctx, cfg.OidcIssuerEndpoint)
 	if err != nil {
 		return nil, err
@@ -74,20 +79,21 @@ func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions, l
 	return client, nil
 }
 
-// nolint:gocyclo // silence cyclo warning
+func makeFirmwarePath(fw *serverservice.ComponentFirmwareVersion) string {
+	return path.Join(fw.Vendor, fw.Filename)
+}
+
 // Publish adds firmware data to Hollow's ServerService
-func (s *ServerService) Publish(ctx context.Context, cfv *serverservice.ComponentFirmwareVersion) error {
-	artifactsURL, err := url.JoinPath(s.artifactsURL, vendors.DstPath(cfv))
+func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error {
+	artifactsURL, err := url.JoinPath(s.artifactsURL, makeFirmwarePath(newFirmware))
 	if err != nil {
 		return err
 	}
 
-	cfv.RepositoryURL = artifactsURL
+	newFirmware.RepositoryURL = artifactsURL
 
 	params := serverservice.ComponentFirmwareVersionListParams{
-		Vendor:   cfv.Vendor,
-		Version:  cfv.Version,
-		Filename: cfv.Filename,
+		Checksum: newFirmware.Checksum,
 	}
 
 	firmwares, _, err := s.client.ListServerComponentFirmware(ctx, &params)
@@ -95,72 +101,102 @@ func (s *ServerService) Publish(ctx context.Context, cfv *serverservice.Componen
 		return errors.Wrap(ErrServerServiceQuery, "ListServerComponentFirmware: "+err.Error())
 	}
 
-	if len(firmwares) == 0 {
-		var u *uuid.UUID
+	firmwareCount := len(firmwares)
 
-		u, _, err = s.client.CreateServerComponentFirmware(ctx, *cfv)
-		if err != nil {
-			return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
-		}
-
-		s.logger.WithFields(
-			logrus.Fields{
-				"uuid": u,
-			},
-		).Info("published firmware")
-
-		return nil
+	if firmwareCount == 0 {
+		return s.createFirmware(ctx, newFirmware)
 	}
 
-	if len(firmwares) == 1 {
-		// check if the firmware already includes this model
-		var update bool
-
-		for _, m := range cfv.Model {
-			if !slices.Contains(firmwares[0].Model, m) {
-				firmwares[0].Model = append(firmwares[0].Model, m)
-				update = true
-			} else {
-				s.logger.WithFields(
-					logrus.Fields{
-						"uuid":    &firmwares[0].UUID,
-						"vendor":  firmwares[0].Vendor,
-						"model":   cfv.Model,
-						"version": cfv.Version,
-					},
-				).Info("firmware already published for model")
-			}
+	if firmwareCount != 1 {
+		uuids := make([]string, len(firmwares))
+		for i := range firmwares {
+			uuids[i] = firmwares[i].UUID.String()
 		}
 
-		// Submit changed firmware to server service
-		if update {
-			_, err = s.client.UpdateServerComponentFirmware(ctx, firmwares[0].UUID, firmwares[0])
-			if err != nil {
-				return errors.Wrap(ErrServerServiceQuery, "UpdateServerComponentFirmware: "+err.Error())
-			}
+		uuidLog := strings.Join(uuids, ",")
 
-			s.logger.WithFields(
-				logrus.Fields{
-					"uuid":  &firmwares[0].UUID,
-					"model": &firmwares[0].Model,
-				},
-			).Info("firmware updated with new models")
-		}
+		s.logger.WithField("uuids", uuidLog).
+			WithField("checksum", newFirmware.Checksum).
+			Error("Multiple firmware IDs found with checksum")
 
-		return nil
+		return errors.Wrap(ErrServerServiceDuplicateFirmware, uuidLog)
 	}
 
-	// Assumption at this point is that there are duplicated firmwares returned by the ListServerComponentFirmware query.
-	uuids := make([]string, len(firmwares))
-	for i := range firmwares {
-		uuids[i] = firmwares[i].UUID.String()
+	newFirmware.UUID = firmwares[0].UUID
+
+	if isDifferent(newFirmware, &firmwares[0]) {
+		return s.updateFirmware(ctx, newFirmware)
 	}
 
-	s.logger.WithFields(
-		logrus.Fields{
-			"uuids": strings.Join(uuids, ","),
-		},
-	).Info("duplicate firmware IDs")
+	s.logger.WithField("firmware", newFirmware.Filename).
+		WithField("vendor", newFirmware.Vendor).
+		Debug("Firmware already exists and is up to date")
 
-	return errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
+	return nil
+}
+
+func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) bool {
+	if firmware1.Vendor != firmware2.Vendor {
+		return true
+	}
+
+	if firmware1.Filename != firmware2.Filename {
+		return true
+	}
+
+	if firmware1.Version != firmware2.Version {
+		return true
+	}
+
+	if firmware1.Component != firmware2.Component {
+		return true
+	}
+
+	if firmware1.Checksum != firmware2.Checksum {
+		return true
+	}
+
+	if firmware1.UpstreamURL != firmware2.UpstreamURL {
+		return true
+	}
+
+	if firmware1.RepositoryURL != firmware2.RepositoryURL {
+		return true
+	}
+
+	if strings.Join(firmware1.Model, ",") != strings.Join(firmware2.Model, ",") {
+		return true
+	}
+
+	return false
+}
+
+func (s *serverService) createFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
+	id, response, err := s.client.CreateServerComponentFirmware(ctx, *firmware)
+
+	if err != nil {
+		return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
+	}
+
+	s.logger.WithField("response", response).
+		WithField("firmware", firmware.Filename).
+		WithField("vendor", firmware.Vendor).
+		WithField("uuid", id).
+		Info("Created firmware")
+
+	return nil
+}
+
+func (s *serverService) updateFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
+	response, err := s.client.UpdateServerComponentFirmware(ctx, firmware.UUID, *firmware)
+	if err != nil {
+		return errors.Wrap(ErrServerServiceQuery, "UpdateServerComponentFirmware: "+err.Error())
+	}
+
+	s.logger.WithField("firmware", firmware.Filename).
+		WithField("vendor", firmware.Vendor).
+		WithField("response", response).
+		Info("Updated firmware")
+
+	return nil
 }

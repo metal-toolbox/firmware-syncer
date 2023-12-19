@@ -6,156 +6,65 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/metal-toolbox/firmware-syncer/internal/config"
-	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
-	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 	"github.com/pkg/errors"
-	"github.com/rclone/rclone/fs"
-	"github.com/rclone/rclone/fs/operations"
 	"github.com/sirupsen/logrus"
+
+	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 )
 
-type Supermicro struct {
-	firmwares []*serverservice.ComponentFirmwareVersion
-	logger    *logrus.Logger
-	metrics   *vendors.Metrics
-	inventory *inventory.ServerService
-	dstCfg    *config.S3Bucket
-	dstFs     fs.Fs
-	tmpFs     fs.Fs
+var ErrMissingFirmwareID = errors.New("upstream URL is missing firmwareID")
+
+type Downloader struct {
+	logger *logrus.Logger
 }
 
-func New(ctx context.Context, firmwares []*serverservice.ComponentFirmwareVersion, cfg *config.Configuration, logger *logrus.Logger) (vendors.Vendor, error) {
-	// init inventory
-	i, err := inventory.New(ctx, cfg.ServerserviceOptions, cfg.ArtifactsURL, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	vendors.SetRcloneLogging(logger)
-
-	dstFs, err := vendors.InitS3Fs(ctx, cfg.FirmwareRepository, "/")
-	if err != nil {
-		return nil, err
-	}
-
-	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: "/tmp"})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Supermicro{
-		firmwares: firmwares,
-		logger:    logger,
-		metrics:   vendors.NewMetrics(),
-		inventory: i,
-		dstCfg:    cfg.FirmwareRepository,
-		dstFs:     dstFs,
-		tmpFs:     tmpFs,
-	}, nil
+// NewSupermicroDownloader creates a new Downloader for downloading files from Supermicro.
+func NewSupermicroDownloader(logger *logrus.Logger) vendors.Downloader {
+	return &Downloader{logger: logger}
 }
 
-func (s *Supermicro) Stats() *vendors.Metrics {
-	return s.metrics
-}
+// Download will download a file for the given firmware to the given downloadDir,
+// and will return the full path to the downloaded file.
+func (d *Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	urlSplit := strings.Split(firmware.UpstreamURL, "=")
 
-func (s *Supermicro) Sync(ctx context.Context) error {
-	for _, fw := range s.firmwares {
-		fwID := strings.Split(fw.UpstreamURL, "=")[1]
-
-		archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, fwID)
-
-		s.logger.WithFields(
-			logrus.Fields{
-				"archiveURL":      archiveURL,
-				"archiveChecksum": archiveChecksum,
-			},
-		).Debug("found archive")
-
-		if err != nil {
-			s.logger.WithFields(
-				logrus.Fields{
-					"fwID": fwID,
-				},
-			).Debug("failed to get archiveURL and archiveChecksum")
-
-			return err
-		}
-
-		// In case the file already exists in dst, don't copy it
-		if exists, _ := fs.FileExists(ctx, s.dstFs, vendors.DstPath(fw)); exists {
-			s.logger.WithFields(
-				logrus.Fields{
-					"filename": fw.Filename,
-				},
-			).Debug("firmware already exists at dst")
-
-			continue
-		}
-
-		// initialize a tmpDir so we can download and unpack the zip archive
-		tmpDir, err := os.MkdirTemp(s.tmpFs.Root(), "firmware-archive")
-		if err != nil {
-			return err
-		}
-
-		s.logger.Debug("Downloading archive")
-
-		archivePath, err := vendors.DownloadFirmwareArchive(ctx, tmpDir, archiveURL, archiveChecksum)
-		if err != nil {
-			return err
-		}
-
-		s.logger.WithFields(
-			logrus.Fields{
-				"archivePath": archivePath,
-			},
-		).Debug("Archive downloaded.")
-
-		s.logger.Debug("Extracting firmware from archive")
-
-		fwFile, err := vendors.ExtractFromZipArchive(archivePath, fw.Filename, fw.Checksum)
-		if err != nil {
-			return err
-		}
-
-		s.logger.WithFields(
-			logrus.Fields{
-				"fwFile": fwFile.Name(),
-			},
-		).Debug("Firmware extracted.")
-
-		s.logger.WithFields(
-			logrus.Fields{
-				"src": fwFile.Name(),
-				"dst": vendors.DstPath(fw),
-			},
-		).Info("Sync Supermicro")
-
-		// Remove root of tmpdir from filename since CopyFile doesn't use it
-		tmpFwPath := strings.Replace(fwFile.Name(), s.tmpFs.Root(), "", 1)
-
-		err = operations.CopyFile(ctx, s.dstFs, s.tmpFs, vendors.DstPath(fw), tmpFwPath)
-		if err != nil {
-			return err
-		}
-
-		// Clean up tmpDir after copying the extracted firmware to dst.
-		os.RemoveAll(tmpDir)
-
-		err = s.inventory.Publish(ctx, fw)
-		if err != nil {
-			return err
-		}
+	if len(urlSplit) < 2 {
+		return "", errors.Wrap(ErrMissingFirmwareID, firmware.UpstreamURL)
 	}
 
-	return nil
+	firmwareID := urlSplit[1]
+	archiveURL, archiveChecksum, err := getArchiveURLAndChecksum(ctx, firmwareID)
+
+	d.logger.WithField("archiveURL", archiveURL).
+		WithField("archiveChecksum", archiveChecksum).
+		Debug("found archive")
+
+	if err != nil {
+		d.logger.WithField("firmwareID", firmwareID).Debug("failed to get archiveURL and archiveChecksum")
+		return "", err
+	}
+
+	d.logger.Debug("Downloading archive")
+
+	archivePath, err := vendors.DownloadFirmwareArchive(ctx, downloadDir, archiveURL, archiveChecksum)
+	if err != nil {
+		return "", err
+	}
+
+	d.logger.WithField("archivePath", archivePath).Debug("Archive downloaded.")
+	d.logger.Debug("Extracting firmware from archive")
+
+	fwFile, err := vendors.ExtractFromZipArchive(archivePath, firmware.Filename, "")
+	if err != nil {
+		return "", err
+	}
+
+	return fwFile.Name(), nil
 }
 
 func getArchiveURLAndChecksum(ctx context.Context, id string) (url, checksum string, err error) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/url"
 	"path"
+	"slices"
+	"sort"
 	"strings"
 
 	"github.com/coreos/go-oidc"
@@ -113,26 +115,52 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.
 			uuids[i] = firmwares[i].UUID.String()
 		}
 
-		uuidLog := strings.Join(uuids, ",")
-
-		s.logger.WithField("uuids", uuidLog).
+		s.logger.WithField("matchingUUIDs", uuids).
 			WithField("checksum", newFirmware.Checksum).
+			WithField("firmware", newFirmware.Filename).
+			WithField("vendor", newFirmware.Vendor).
+			WithField("version", newFirmware.Version).
 			Error("Multiple firmware IDs found with checksum")
 
-		return errors.Wrap(ErrServerServiceDuplicateFirmware, uuidLog)
+		return errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
 	}
 
-	newFirmware.UUID = firmwares[0].UUID
+	currentFirmware := &firmwares[0]
+	newFirmware.UUID = currentFirmware.UUID
+	newFirmware.Model = mergeModels(currentFirmware.Model, newFirmware.Model)
 
-	if isDifferent(newFirmware, &firmwares[0]) {
+	if isDifferent(newFirmware, currentFirmware) {
 		return s.updateFirmware(ctx, newFirmware)
 	}
 
 	s.logger.WithField("firmware", newFirmware.Filename).
+		WithField("uuid", newFirmware.UUID).
 		WithField("vendor", newFirmware.Vendor).
+		WithField("version", newFirmware.Version).
 		Debug("Firmware already exists and is up to date")
 
 	return nil
+}
+
+func mergeModels(models1, models2 []string) []string {
+	allModels := []string(nil)
+	modelsSet := make(map[string]bool)
+
+	for _, model := range models1 {
+		modelsSet[model] = true
+	}
+
+	for _, model := range models2 {
+		modelsSet[model] = true
+	}
+
+	for model := range modelsSet {
+		allModels = append(allModels, model)
+	}
+
+	sort.Strings(allModels) // For consistent ordering
+
+	return allModels
 }
 
 func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) bool {
@@ -164,7 +192,7 @@ func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) b
 		return true
 	}
 
-	if strings.Join(firmware1.Model, ",") != strings.Join(firmware2.Model, ",") {
+	if !slices.Equal(firmware1.Model, firmware2.Model) {
 		return true
 	}
 
@@ -172,14 +200,13 @@ func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) b
 }
 
 func (s *serverService) createFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
-	id, response, err := s.client.CreateServerComponentFirmware(ctx, *firmware)
-
+	id, _, err := s.client.CreateServerComponentFirmware(ctx, *firmware)
 	if err != nil {
 		return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
 	}
 
-	s.logger.WithField("response", response).
-		WithField("firmware", firmware.Filename).
+	s.logger.WithField("firmware", firmware.Filename).
+		WithField("version", firmware.Version).
 		WithField("vendor", firmware.Vendor).
 		WithField("uuid", id).
 		Info("Created firmware")
@@ -188,14 +215,15 @@ func (s *serverService) createFirmware(ctx context.Context, firmware *serverserv
 }
 
 func (s *serverService) updateFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
-	response, err := s.client.UpdateServerComponentFirmware(ctx, firmware.UUID, *firmware)
+	_, err := s.client.UpdateServerComponentFirmware(ctx, firmware.UUID, *firmware)
 	if err != nil {
 		return errors.Wrap(ErrServerServiceQuery, "UpdateServerComponentFirmware: "+err.Error())
 	}
 
 	s.logger.WithField("firmware", firmware.Filename).
+		WithField("uuid", firmware.UUID).
+		WithField("version", firmware.Version).
 		WithField("vendor", firmware.Vendor).
-		WithField("response", response).
 		Info("Updated firmware")
 
 	return nil

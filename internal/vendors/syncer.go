@@ -66,6 +66,7 @@ func (s *Syncer) syncFirmware(ctx context.Context, firmware *serverservice.Compo
 
 	logMsg := s.logger.WithField("firmware", firmware.Filename).
 		WithField("vendor", firmware.Vendor).
+		WithField("version", firmware.Version).
 		WithField("url", firmware.UpstreamURL)
 
 	logMsg.Info("Syncing Firmware")

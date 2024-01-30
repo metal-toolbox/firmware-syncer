@@ -24,6 +24,7 @@ type testCase struct {
 }
 
 var idString = "e2458c5e-bf0b-11ee-815a-f76c5993e3ca"
+var artifactsURL = "https://example.com/some/path"
 
 func TestServerServicePublish(t *testing.T) {
 	id, err := uuid.Parse(idString)
@@ -122,87 +123,84 @@ func TestServerServicePublish(t *testing.T) {
 	}
 }
 
-func testServerServicePublish(t *testing.T, tt *testCase) {
+func handleGetFirmware(t *testing.T, tt *testCase, writer http.ResponseWriter) {
+	writer.Header().Set("Content-Type", "application/json")
+
+	serverResponse := &serverservice.ServerResponse{}
+
+	if tt.existingFirmware != nil {
+		serverResponse.Records = []*serverservice.ComponentFirmwareVersion{
+			tt.existingFirmware,
+		}
+	}
+
+	responseBytes, err := json.Marshal(serverResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err = writer.Write(responseBytes); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func handleUpdateFirmware(t *testing.T, tt *testCase, writer http.ResponseWriter, request *http.Request) {
+	b, err := io.ReadAll(request.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newFirmware := &serverservice.ComponentFirmwareVersion{}
+	if err = json.Unmarshal(b, newFirmware); err != nil {
+		t.Fatal(err)
+	}
+
+	if tt.expectedFirmware != nil {
+		assert.Equal(t, tt.expectedFirmware, newFirmware)
+	} else {
+		t.Fatalf("No firmware %s expected", request.Method)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+
+	if _, err = writer.Write(b); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func newHandler(t *testing.T, tt *testCase) *http.ServeMux {
 	handler := http.NewServeMux()
+
 	handler.HandleFunc(
 		"/api/v1/server-component-firmwares",
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
+		func(writer http.ResponseWriter, request *http.Request) {
+			switch request.Method {
 			case http.MethodGet:
-				w.Header().Set("Content-Type", "application/json")
-
-				serverResponse := &serverservice.ServerResponse{}
-
-				if tt.existingFirmware != nil {
-					serverResponse.Records = []*serverservice.ComponentFirmwareVersion{
-						tt.existingFirmware,
-					}
-				}
-
-				responseBytes, err := json.Marshal(serverResponse)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if _, err = w.Write(responseBytes); err != nil {
-					t.Fatal(err)
-				}
+				handleGetFirmware(t, tt, writer)
 			case http.MethodPost:
-				b, err := io.ReadAll(r.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				newFirmware := &serverservice.ComponentFirmwareVersion{}
-				if err = json.Unmarshal(b, newFirmware); err != nil {
-					t.Fatal(err)
-				}
-
-				if tt.expectedFirmware != nil {
-					assert.Equal(t, tt.expectedFirmware, newFirmware)
-				} else {
-					t.Fatal("No firmware POST expected")
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-
-				if _, err = w.Write(b); err != nil {
-					t.Fatal(err)
-				}
+				handleUpdateFirmware(t, tt, writer, request)
 			default:
-				t.Fatal("unexpected request method, got: " + r.Method)
+				t.Fatal("unexpected request method, got: " + request.Method)
 			}
 		},
 	)
+
 	handler.HandleFunc(
 		"/api/v1/server-component-firmwares/"+idString,
 		func(writer http.ResponseWriter, request *http.Request) {
-			switch request.Method {
-			case http.MethodPut:
-				b, err := io.ReadAll(request.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				updatedFirmware := &serverservice.ComponentFirmwareVersion{}
-				if err = json.Unmarshal(b, updatedFirmware); err != nil {
-					t.Fatal(err)
-				}
-
-				if tt.expectedFirmware != nil {
-					assert.Equal(t, tt.expectedFirmware, updatedFirmware)
-				} else {
-					t.Fatal("No firmware PUT expected")
-				}
-
-				writer.Header().Set("Content-Type", "application/json")
-
-				if _, err = writer.Write(b); err != nil {
-					t.Fatal(err)
-				}
+			if request.Method == http.MethodPut {
+				handleUpdateFirmware(t, tt, writer, request)
+			} else {
+				t.Fatal("unexpected request method, got: " + request.Method)
 			}
 		},
 	)
+
+	return handler
+}
+
+func testServerServicePublish(t *testing.T, tt *testCase) {
+	handler := newHandler(t, tt)
 
 	mock := httptest.NewServer(handler)
 	defer mock.Close()
@@ -211,8 +209,6 @@ func testServerServicePublish(t *testing.T, tt *testCase) {
 		Endpoint:     mock.URL,
 		DisableOAuth: true,
 	}
-
-	artifactsURL := "https://example.com/some/path"
 
 	logger := logrus.New()
 	logger.Out = io.Discard

@@ -143,7 +143,7 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.
 }
 
 func mergeModels(models1, models2 []string) []string {
-	var allModels []string
+	allModels := []string(nil)
 	modelsSet := make(map[string]bool)
 
 	for _, model := range models1 {
@@ -154,7 +154,7 @@ func mergeModels(models1, models2 []string) []string {
 		modelsSet[model] = true
 	}
 
-	for model, _ := range modelsSet {
+	for model := range modelsSet {
 		allModels = append(allModels, model)
 	}
 

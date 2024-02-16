@@ -321,7 +321,7 @@ func Test_SourceOverrideDownloader(t *testing.T) {
 			firmwarePath, err := downloader.Download(ctx, tmpDir, fakeFirmware)
 
 			if tt.expectedError != nil {
-				assert.Errorf(t, err, tt.expectedError.Error())
+				assert.ErrorContains(t, err, tt.expectedError.Error())
 				return
 			}
 

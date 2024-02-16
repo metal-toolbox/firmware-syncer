@@ -371,12 +371,15 @@ func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmwar
 	return path.Join(downloadDir, firmware.Filename), nil
 }
 
+// SourceOverrideDownloader is meant to download firmware from an alternate source
+// than the firmware's UpstreamURL.
 type SourceOverrideDownloader struct {
 	logger  *logrus.Logger
 	client  serverservice.Doer
 	baseURL string
 }
 
+// NewSourceOverrideDownloader creates a SourceOverrideDownloader.
 func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doer, sourceURL string) Downloader {
 	if !strings.HasSuffix(sourceURL, "/") {
 		sourceURL += "/"
@@ -389,6 +392,10 @@ func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doe
 	}
 }
 
+// Download will download the given firmware into the given downloadDir,
+// and return the full path to the downloaded file.
+// The file will be downloaded from the sourceURL provided to the SourceOverrideDownloader
+// instead of the firmware's UpstreamURL.
 func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
 	firmwareURL := d.baseURL + firmware.Filename
 	filePath := downloadDir + firmware.Filename

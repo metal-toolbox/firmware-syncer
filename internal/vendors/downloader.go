@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -46,6 +47,8 @@ var (
 	ErrDirEmpty        = errors.New("directory empty")
 	ErrModTimeFile     = errors.New("error retrieving file mod time")
 	ErrCreatingTmpDir  = errors.New("error creating tmp dir")
+
+	ErrUnexpectedStatusCode = errors.New("unexpected status code")
 )
 
 //go:generate mockgen -source=downloader.go -destination=mocks/downloader.go Downloader
@@ -366,4 +369,58 @@ func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmwar
 	}
 
 	return path.Join(downloadDir, firmware.Filename), nil
+}
+
+type SourceOverrideDownloader struct {
+	logger  *logrus.Logger
+	client  serverservice.Doer
+	baseURL string
+}
+
+func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doer, sourceURL string) Downloader {
+	if !strings.HasSuffix(sourceURL, "/") {
+		sourceURL += "/"
+	}
+
+	return &SourceOverrideDownloader{
+		logger,
+		client,
+		sourceURL,
+	}
+}
+
+func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	firmwareURL := d.baseURL + firmware.Filename
+	filePath := downloadDir + firmware.Filename
+
+	d.logger.WithField("url", firmwareURL).
+		WithField("firmware", firmware.Filename).
+		WithField("vendor", firmware.Vendor).
+		Info("Downloading firmware")
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", errors.Wrap(ErrCreatingTmpDir, err.Error())
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, firmwareURL, http.NoBody)
+	if err != nil {
+		return "", errors.Wrap(ErrSourceURL, err.Error())
+	}
+
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", errors.Wrap(ErrUnexpectedStatusCode, fmt.Sprintf("status code %d", resp.StatusCode))
+	}
+
+	if _, err = io.Copy(file, resp.Body); err != nil {
+		return "", errors.Wrap(ErrCopy, err.Error())
+	}
+
+	return filePath, nil
 }

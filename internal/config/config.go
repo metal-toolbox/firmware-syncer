@@ -11,8 +11,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+
+	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 )
 
 var (
@@ -49,6 +50,9 @@ type Configuration struct {
 
 	// GithubOpenBmcToken defines the token used to access internal openbmc repository
 	GithubOpenBmcToken string `mapstructure:"github_openbmc_token"`
+
+	// DefaultDownloadURL defines where unsupported firmware will be downloaded from
+	DefaultDownloadURL string `mapstructure:"default_download_url"`
 }
 
 // ServerserviceOptions defines configuration for the Serverservice client.

@@ -3,7 +3,6 @@ package inventory
 import (
 	"context"
 	"net/url"
-	"path"
 	"slices"
 	"sort"
 	"strings"
@@ -81,32 +80,26 @@ func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (
 	return client, nil
 }
 
-func makeFirmwarePath(fw *serverservice.ComponentFirmwareVersion) string {
-	return path.Join(fw.Vendor, fw.Filename)
+func (s *serverService) addRepositoryURL(fw *serverservice.ComponentFirmwareVersion) (err error) {
+	fw.RepositoryURL, err = url.JoinPath(s.artifactsURL, fw.Vendor, fw.Filename)
+
+	return err
 }
 
-// Publish adds firmware data to Hollow's ServerService
-func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error {
-	artifactsURL, err := url.JoinPath(s.artifactsURL, makeFirmwarePath(newFirmware))
-	if err != nil {
-		return err
-	}
-
-	newFirmware.RepositoryURL = artifactsURL
-
+func (s *serverService) getCurrentFirmware(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) (*serverservice.ComponentFirmwareVersion, error) {
 	params := serverservice.ComponentFirmwareVersionListParams{
 		Checksum: newFirmware.Checksum,
 	}
 
 	firmwares, _, err := s.client.ListServerComponentFirmware(ctx, &params)
 	if err != nil {
-		return errors.Wrap(ErrServerServiceQuery, "ListServerComponentFirmware: "+err.Error())
+		return nil, errors.Wrap(ErrServerServiceQuery, "ListServerComponentFirmware: "+err.Error())
 	}
 
 	firmwareCount := len(firmwares)
 
 	if firmwareCount == 0 {
-		return s.createFirmware(ctx, newFirmware)
+		return nil, nil
 	}
 
 	if firmwareCount != 1 {
@@ -122,10 +115,27 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.
 			WithField("version", newFirmware.Version).
 			Error("Multiple firmware IDs found with checksum")
 
-		return errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
+		return nil, errors.Wrap(ErrServerServiceDuplicateFirmware, strings.Join(uuids, ","))
 	}
 
-	currentFirmware := &firmwares[0]
+	return &firmwares[0], nil
+}
+
+// Publish adds firmware data to Hollow's ServerService
+func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error {
+	if err := s.addRepositoryURL(newFirmware); err != nil {
+		return err
+	}
+
+	currentFirmware, err := s.getCurrentFirmware(ctx, newFirmware)
+	if err != nil {
+		return err
+	}
+
+	if currentFirmware == nil {
+		return s.createFirmware(ctx, newFirmware)
+	}
+
 	newFirmware.UUID = currentFirmware.UUID
 	newFirmware.Model = mergeModels(currentFirmware.Model, newFirmware.Model)
 

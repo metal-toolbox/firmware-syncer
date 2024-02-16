@@ -49,6 +49,7 @@ var (
 	ErrCreatingTmpDir  = errors.New("error creating tmp dir")
 
 	ErrUnexpectedStatusCode = errors.New("unexpected status code")
+	ErrDownloadingFile      = errors.New("failed to download file")
 )
 
 //go:generate mockgen -source=downloader.go -destination=mocks/downloader.go Downloader
@@ -397,8 +398,12 @@ func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doe
 // The file will be downloaded from the sourceURL provided to the SourceOverrideDownloader
 // instead of the firmware's UpstreamURL.
 func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
-	firmwareURL := d.baseURL + firmware.Filename
-	filePath := downloadDir + firmware.Filename
+	filePath := filepath.Join(downloadDir, firmware.Filename)
+
+	firmwareURL, err := url.JoinPath(d.baseURL, firmware.Filename)
+	if err != nil {
+		return "", errors.Wrap(ErrSourceURL, err.Error())
+	}
 
 	d.logger.WithField("url", firmwareURL).
 		WithField("firmware", firmware.Filename).
@@ -417,7 +422,7 @@ func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir str
 
 	resp, err := d.client.Do(req)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(ErrDownloadingFile, err.Error())
 	}
 	defer resp.Body.Close()
 

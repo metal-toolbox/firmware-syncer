@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -101,8 +102,12 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 			ghClient := github.NewGitHubClient(ctx, app.Config.GithubOpenBmcToken)
 			downloader = github.NewGitHubDownloader(app.Logger, ghClient)
 		default:
-			app.Logger.Error("Vendor not supported: " + vendor)
-			continue
+			if app.Config.DefaultDownloadURL == "" {
+				app.Logger.Error("Vendor not supported: " + vendor)
+				continue
+			}
+
+			downloader = vendors.NewSourceOverrideDownloader(app.Logger, http.DefaultClient, app.Config.DefaultDownloadURL)
 		}
 
 		syncer := vendors.NewSyncer(dstFs, tmpFs, downloader, inventoryClient, firmwares, app.Logger)
@@ -221,6 +226,10 @@ func (a *App) envVarAppOverrides() error {
 
 	if a.v.GetString("github.openbmc.token") != "" {
 		a.Config.GithubOpenBmcToken = a.v.GetString("github.openbmc.token")
+	}
+
+	if a.v.GetString("default.download.url") != "" {
+		a.Config.DefaultDownloadURL = a.v.GetString("default.download.url")
 	}
 
 	return nil

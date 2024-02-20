@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -46,6 +47,9 @@ var (
 	ErrDirEmpty        = errors.New("directory empty")
 	ErrModTimeFile     = errors.New("error retrieving file mod time")
 	ErrCreatingTmpDir  = errors.New("error creating tmp dir")
+
+	ErrUnexpectedStatusCode = errors.New("unexpected status code")
+	ErrDownloadingFile      = errors.New("failed to download file")
 )
 
 //go:generate mockgen -source=downloader.go -destination=mocks/downloader.go Downloader
@@ -366,4 +370,69 @@ func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmwar
 	}
 
 	return path.Join(downloadDir, firmware.Filename), nil
+}
+
+// SourceOverrideDownloader is meant to download firmware from an alternate source
+// than the firmware's UpstreamURL.
+type SourceOverrideDownloader struct {
+	logger  *logrus.Logger
+	client  serverservice.Doer
+	baseURL string
+}
+
+// NewSourceOverrideDownloader creates a SourceOverrideDownloader.
+func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doer, sourceURL string) Downloader {
+	if !strings.HasSuffix(sourceURL, "/") {
+		sourceURL += "/"
+	}
+
+	return &SourceOverrideDownloader{
+		logger,
+		client,
+		sourceURL,
+	}
+}
+
+// Download will download the given firmware into the given downloadDir,
+// and return the full path to the downloaded file.
+// The file will be downloaded from the sourceURL provided to the SourceOverrideDownloader
+// instead of the firmware's UpstreamURL.
+func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+	filePath := filepath.Join(downloadDir, firmware.Filename)
+
+	firmwareURL, err := url.JoinPath(d.baseURL, firmware.Filename)
+	if err != nil {
+		return "", errors.Wrap(ErrSourceURL, err.Error())
+	}
+
+	d.logger.WithField("url", firmwareURL).
+		WithField("firmware", firmware.Filename).
+		WithField("vendor", firmware.Vendor).
+		Info("Downloading firmware")
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", errors.Wrap(ErrCreatingTmpDir, err.Error())
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, firmwareURL, http.NoBody)
+	if err != nil {
+		return "", errors.Wrap(ErrSourceURL, err.Error())
+	}
+
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return "", errors.Wrap(ErrDownloadingFile, err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", errors.Wrap(ErrUnexpectedStatusCode, fmt.Sprintf("status code %d", resp.StatusCode))
+	}
+
+	if _, err = io.Copy(file, resp.Body); err != nil {
+		return "", errors.Wrap(ErrCopy, err.Error())
+	}
+
+	return filePath, nil
 }

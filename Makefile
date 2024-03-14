@@ -18,7 +18,7 @@ mocks:
 
 ## Go test
 test:
-	CGO_ENABLED=0 go test  -covermode=atomic ./...
+	go test -covermode=atomic ./...
 
 ## golangci-lint
 lint:
@@ -30,7 +30,7 @@ go-mod:
 
 ## Build osx bin
 build-osx: go-mod
-	GOOS=darwin GOARCH=amd64 go build -o firmware-syncer -mod vendor
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o firmware-syncer -mod vendor
 	sha256sum firmware-syncer > firmware-syncer_checksum.txt
 
 ## Build linux bin
@@ -40,10 +40,10 @@ build-linux: go-mod
 
 ## build docker image and tag as ghcr.io/metal-toolbox/firmware-syncer:latest
 build-image: build-linux
-	docker build --rm=true -f Dockerfile -t ${DOCKER_IMAGE}:latest  . \
-							 --label org.label-schema.schema-version=1.0 \
-							 --label org.label-schema.vcs-ref=$(GIT_COMMIT_FULL) \
-							 --label org.label-schema.vcs-url=$(REPO)
+	docker build --rm=true -f Dockerfile -t ${DOCKER_IMAGE}:latest . \
+		--label org.label-schema.schema-version=1.0 \
+		--label org.label-schema.vcs-ref=${GIT_COMMIT_FULL} \
+		--label org.label-schema.vcs-url=${REPO}
 
 ## tag and push devel docker image to local registry
 push-image-devel: build-image
@@ -58,8 +58,8 @@ YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-
 TARGET_MAX_CHAR_NUM=20
+
 ## Show help
 help:
 	@echo ''
@@ -72,7 +72,7 @@ help:
 		if (helpMessage) { \
 			helpCommand = substr($$1, 0, index($$1, ":")-1); \
 			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-			printf "  ${YELLOW}%-$(TARGET_MAX_CHAR_NUM)s${RESET} ${GREEN}%s${RESET}\n", helpCommand, helpMessage; \
+			printf "  ${YELLOW}%-${TARGET_MAX_CHAR_NUM}s${RESET} ${GREEN}%s${RESET}\n", helpCommand, helpMessage; \
 		} \
 	} \
-	{ lastLine = $$0 }' $(MAKEFILE_LIST)
+	{ lastLine = $$0 }' ${MAKEFILE_LIST}

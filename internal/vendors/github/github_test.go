@@ -22,6 +22,11 @@ func Test_parseGithubReleaseURL(t *testing.T) {
 			"https://github.com/some-repo/releases/download/some-tag/some-filename",
 			[]string{"", "", "", ""},
 		},
+		{
+			"broken asset URL",
+			"https://github.com/some-owner/some-repo/raw/main/obj/some-filename",
+			[]string{"", "", "", ""},
+		},
 	}
 
 	for _, tc := range cases {

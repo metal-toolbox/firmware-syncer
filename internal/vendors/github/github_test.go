@@ -25,7 +25,7 @@ func Test_parseGithubReleaseURL(t *testing.T) {
 		{
 			"raw URL",
 			"https://github.com/some-owner/some-repo/raw/main/obj/some-filename",
-			[]string{"some-owner", "some-repo", "notag", "some-filename"},
+			[]string{"some-owner", "some-repo", "obj", "some-filename"},
 		},
 	}
 

@@ -23,9 +23,9 @@ func Test_parseGithubReleaseURL(t *testing.T) {
 			[]string{"", "", "", ""},
 		},
 		{
-			"broken asset URL",
+			"raw URL",
 			"https://github.com/some-owner/some-repo/raw/main/obj/some-filename",
-			[]string{"", "", "", ""},
+			[]string{"some-owner", "some-repo", "notag", "some-filename"},
 		},
 	}
 

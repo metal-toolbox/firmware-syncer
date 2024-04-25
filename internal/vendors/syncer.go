@@ -52,8 +52,13 @@ func NewSyncer(
 func (s *Syncer) Sync(ctx context.Context) (err error) {
 	for _, firmware := range s.firmwares {
 		if err = s.syncFirmware(ctx, firmware); err != nil {
-			msg := fmt.Sprintf("failed to sync firmware %s", firmware.Filename)
-			return errors.Wrap(err, msg)
+			// Log error without returning, to sync other firmwares
+			s.logger.WithError(err).
+				WithField("firmware", firmware.Filename).
+				WithField("vendor", firmware.Vendor).
+				WithField("version", firmware.Version).
+				WithField("url", firmware.UpstreamURL).
+				Error("Failed to sync firmware")
 		}
 	}
 

@@ -59,6 +59,9 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 				WithField("version", firmware.Version).
 				WithField("url", firmware.UpstreamURL).
 				Error("Failed to sync firmware")
+			msg := fmt.Sprintf("failed to sync firmware %s", firmware.Filename)
+			// Log error without returning, to sync other firmwares
+			s.logger.WithError(err).Error(msg)
 		}
 	}
 

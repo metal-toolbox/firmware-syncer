@@ -117,6 +117,8 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bmc-toolbox/common v0.0.0-20230717121556-5eb9915a8a5a h1:SjtoU9dE3bYfYnPXODCunMztjoDgnE3DVJCPLBqwz6Q=
 github.com/bmc-toolbox/common v0.0.0-20230717121556-5eb9915a8a5a/go.mod h1:SY//n1PJjZfbFbmAsB6GvEKbc7UXz3d30s3kWxfJQ/c=
+github.com/bmc-toolbox/common v0.0.0-20240426155832-c9882dbabcca h1:8hmbfSQ3cR0KXyAegrgmv9ic2eyDLdYl9j6819dkKb0=
+github.com/bmc-toolbox/common v0.0.0-20240426155832-c9882dbabcca/go.mod h1:SY//n1PJjZfbFbmAsB6GvEKbc7UXz3d30s3kWxfJQ/c=
 github.com/bradenaw/juniper v0.13.1 h1:9P7/xeaYuEyqPuJHSHCJoisWyPvZH4FAi59BxJLh7F8=
 github.com/buengese/sgzip v0.1.1 h1:ry+T8l1mlmiWEsDrH/YHZnCVWD2S3im1KLsyO+8ZmTU=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=

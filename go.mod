@@ -1,6 +1,8 @@
 module github.com/metal-toolbox/firmware-syncer
 
-go 1.19
+go 1.21
+
+toolchain go1.22.3
 
 require (
 	github.com/pkg/errors v0.9.1
@@ -14,6 +16,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20240426155832-c9882dbabcca
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v62 v62.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/mitchellh/mapstructure v1.5.0

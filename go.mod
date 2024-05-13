@@ -29,6 +29,9 @@ require (
 	go.uber.org/mock v0.4.0
 	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.21.0
+	github.com/rclone/rclone v1.64.2
+	github.com/spf13/viper v1.18.2
+	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.3.0
 	golang.org/x/net v0.24.0
 	golang.org/x/oauth2 v0.20.0

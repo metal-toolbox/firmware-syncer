@@ -11,7 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 
 	"github.com/metal-toolbox/firmware-syncer/pkg/types"
 )
@@ -77,6 +77,8 @@ type FirmwareRecord struct {
 	MD5Sum          string `json:"md5sum"`
 	VendorURI       string `json:"vendor_uri"`
 	Model           string `json:"model,omitempty"`
+	InstallInband   bool   `json:"install_inband"`
+	Oem             bool   `json:"oem"`
 	// intentionally ignoring preerequisite field in modeldata.json
 	// because sometimes it's a bool (false) or a string with the prerequisite
 }
@@ -97,7 +99,7 @@ type S3Bucket struct {
 	SecretKey string `mapstructure:"secret_key"`
 }
 
-func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]*serverservice.ComponentFirmwareVersion, error) {
+func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][]*fleetdbapi.ComponentFirmwareVersion, error) {
 	var httpClient = &http.Client{
 		Timeout: time.Second * 15,
 	}
@@ -130,7 +132,7 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 		return nil, err
 	}
 
-	firmwaresByVendor := make(map[string][]*serverservice.ComponentFirmwareVersion)
+	firmwaresByVendor := make(map[string][]*fleetdbapi.ComponentFirmwareVersion)
 
 	for _, m := range models {
 		for component, firmwareRecords := range m.Components {
@@ -140,8 +142,10 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 					cModels = append(cModels, strings.ToLower(fw.Model))
 				}
 
+				tmpInstallInband := fw.InstallInband
+				tmpOEM := fw.Oem
 				firmwaresByVendor[m.Manufacturer] = append(firmwaresByVendor[m.Manufacturer],
-					&serverservice.ComponentFirmwareVersion{
+					&fleetdbapi.ComponentFirmwareVersion{
 						Vendor:      strings.ToLower(m.Manufacturer),
 						Version:     fw.FirmwareVersion,
 						Model:       cModels,
@@ -149,7 +153,9 @@ func LoadFirmwareManifest(ctx context.Context, manifestURL string) (map[string][
 						UpstreamURL: fw.VendorURI,
 						Filename:    fw.Filename,
 						// publish checksum with hash hint
-						Checksum: "md5sum:" + fw.MD5Sum,
+						Checksum:      "md5sum:" + fw.MD5Sum,
+						InstallInband: &tmpInstallInband,
+						OEM:           &tmpOEM,
 					})
 			}
 		}

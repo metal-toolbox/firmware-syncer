@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	go.hollow.sh/serverservice v0.16.2
-	go.uber.org/mock v0.3.0
+	go.uber.org/mock v0.4.0
 	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.20.0
 )

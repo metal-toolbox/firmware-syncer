@@ -50,7 +50,7 @@ func NewGitHubDownloader(logger *logrus.Logger, client *github.Client) vendors.D
 func (d *Downloader) Download(
 	ctx context.Context,
 	downloadDir string,
-	firmware *serverservice.ComponentFirmwareVersion,
+	firmware *fleetdbapi.ComponentFirmwareVersion,
 ) (string, error) {
 	tmpFs, err := vendors.InitLocalFs(ctx, &vendors.LocalFsConfig{Root: downloadDir})
 	if err != nil {

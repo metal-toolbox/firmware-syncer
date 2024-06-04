@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rclone/rclone v1.64.2
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	go.hollow.sh/serverservice v0.16.2
 	go.uber.org/mock v0.4.0
 	golang.org/x/net v0.23.0

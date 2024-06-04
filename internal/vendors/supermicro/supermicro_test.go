@@ -70,6 +70,7 @@ MD5 CheckSum: 3f5cecadf92192d86d049a99b36939ab
 				assert.Equal(t, tc.wantFilename, filename)
 				assert.Equal(t, tc.wantChecksum, checksum)
 			}
+
 			assert.Equal(t, tc.wantFilename, filename)
 			assert.Equal(t, tc.wantChecksum, checksum)
 		})

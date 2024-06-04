@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 )

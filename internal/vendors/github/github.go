@@ -17,7 +17,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/vendors"
 
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 const DownloadTimeout = 300

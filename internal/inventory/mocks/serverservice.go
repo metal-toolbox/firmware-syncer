@@ -12,7 +12,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	gomock "go.uber.org/mock/gomock"
 )
 

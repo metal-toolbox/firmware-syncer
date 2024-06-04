@@ -22,7 +22,7 @@ import (
 	rcloneFs "github.com/rclone/rclone/fs"
 	rcloneConfigmap "github.com/rclone/rclone/fs/config/configmap"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 var (

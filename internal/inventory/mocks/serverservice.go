@@ -40,7 +40,7 @@ func (m *MockServerService) EXPECT() *MockServerServiceMockRecorder {
 }
 
 // Publish mocks base method.
-func (m *MockServerService) Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error {
+func (m *MockServerService) Publish(ctx context.Context, newFirmware *fleetdbapi.ComponentFirmwareVersion) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", ctx, newFirmware)
 	ret0, _ := ret[0].(error)

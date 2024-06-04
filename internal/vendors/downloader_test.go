@@ -10,9 +10,9 @@ import (
 	"path"
 	"testing"
 
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	"go.uber.org/mock/gomock"
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
@@ -53,7 +53,9 @@ func Test_InitLocalFs(t *testing.T) {
 				assert.ErrorIs(t, err, tc.err)
 				return
 			}
+
 			assert.Nil(t, err)
+
 			if tc.want != "" {
 				assert.Equal(t, tc.want, f.String())
 			}
@@ -120,7 +122,9 @@ func Test_InitS3Fs(t *testing.T) {
 				assert.ErrorIs(t, err, tc.err)
 				return
 			}
+
 			assert.Nil(t, err)
+
 			if tc.want != "" {
 				assert.Equal(t, tc.want, f.String())
 			}
@@ -202,7 +206,7 @@ func Test_SplitURLPath(t *testing.T) {
 
 // HTTPDoer interface is meant to help generate the mock
 type HTTPDoer interface {
-	serverservice.Doer
+	fleetdbapi.Doer
 }
 
 // URL Matcher
@@ -316,7 +320,7 @@ func Test_SourceOverrideDownloader(t *testing.T) {
 				client.EXPECT().Do(matchesURL("https://foo/firmware.bin")).Return(fakeResponse, clientError)
 			}
 
-			fakeFirmware := &serverservice.ComponentFirmwareVersion{Filename: firmwareName}
+			fakeFirmware := &fleetdbapi.ComponentFirmwareVersion{Filename: firmwareName}
 			downloader := NewSourceOverrideDownloader(logger, client, fakeURL)
 			firmwarePath, err := downloader.Download(ctx, tmpDir, fakeFirmware)
 

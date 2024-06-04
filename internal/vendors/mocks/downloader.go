@@ -40,7 +40,7 @@ func (m *MockDownloader) EXPECT() *MockDownloaderMockRecorder {
 }
 
 // Download mocks base method.
-func (m *MockDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (m *MockDownloader) Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Download", ctx, downloadDir, firmware)
 	ret0, _ := ret[0].(string)

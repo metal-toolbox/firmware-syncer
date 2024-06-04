@@ -17,12 +17,12 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	rcloneLocal "github.com/rclone/rclone/backend/local"
 	rcloneS3 "github.com/rclone/rclone/backend/s3"
 	rcloneFs "github.com/rclone/rclone/fs"
 	rcloneConfigmap "github.com/rclone/rclone/fs/config/configmap"
 	rcloneOperations "github.com/rclone/rclone/fs/operations"
-	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 var (
@@ -58,7 +58,7 @@ var (
 type Downloader interface {
 	// Download takes in the directory to download the file to, and the firmware to be downloaded.
 	// It should also return the full path to the downloaded file.
-	Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error)
+	Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error)
 }
 
 // DownloaderStats includes fields for stats on file/object transfer for Downloader
@@ -83,12 +83,12 @@ func SetRcloneLogging(logger *logrus.Logger) {
 	}
 }
 
-func SrcPath(fw *serverservice.ComponentFirmwareVersion) string {
+func SrcPath(fw *fleetdbapi.ComponentFirmwareVersion) string {
 	u, _ := url.Parse(fw.UpstreamURL)
 	return u.Path
 }
 
-func DstPath(fw *serverservice.ComponentFirmwareVersion) string {
+func DstPath(fw *fleetdbapi.ComponentFirmwareVersion) string {
 	return path.Join(fw.Vendor, fw.Filename)
 }
 
@@ -309,7 +309,7 @@ func NewArchiveDownloader(logger *logrus.Logger) Downloader {
 
 // Download will download the file for the given firmware into the given downloadDir,
 // and return the full path to the downloaded file.
-func (m *ArchiveDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (m *ArchiveDownloader) Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error) {
 	archivePath, err := DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
 	if err != nil {
 		return "", err
@@ -337,7 +337,7 @@ func NewRcloneDownloader(logger *logrus.Logger) Downloader {
 
 // Download will download the file for the given firmware into the given downloadDir,
 // and return the full path to the downloaded file.
-func (r *RcloneDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (r *RcloneDownloader) Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error) {
 	return DownloadFirmwareArchive(ctx, downloadDir, firmware.UpstreamURL, "")
 }
 
@@ -353,7 +353,7 @@ func NewS3Downloader(logger *logrus.Logger, s3Fs rcloneFs.Fs) Downloader {
 
 // Download will download the file for the given firmware into the given downloadDir,
 // and return the full path to the downloaded file.
-func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error) {
 	tmpFS, err := InitLocalFs(ctx, &LocalFsConfig{Root: downloadDir})
 	if err != nil {
 		return "", err
@@ -376,12 +376,12 @@ func (s *S3Downloader) Download(ctx context.Context, downloadDir string, firmwar
 // than the firmware's UpstreamURL.
 type SourceOverrideDownloader struct {
 	logger  *logrus.Logger
-	client  serverservice.Doer
+	client  fleetdbapi.Doer
 	baseURL string
 }
 
 // NewSourceOverrideDownloader creates a SourceOverrideDownloader.
-func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doer, sourceURL string) Downloader {
+func NewSourceOverrideDownloader(logger *logrus.Logger, client fleetdbapi.Doer, sourceURL string) Downloader {
 	if !strings.HasSuffix(sourceURL, "/") {
 		sourceURL += "/"
 	}
@@ -397,7 +397,7 @@ func NewSourceOverrideDownloader(logger *logrus.Logger, client serverservice.Doe
 // and return the full path to the downloaded file.
 // The file will be downloaded from the sourceURL provided to the SourceOverrideDownloader
 // instead of the firmware's UpstreamURL.
-func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *serverservice.ComponentFirmwareVersion) (string, error) {
+func (d *SourceOverrideDownloader) Download(ctx context.Context, downloadDir string, firmware *fleetdbapi.ComponentFirmwareVersion) (string, error) {
 	filePath := filepath.Join(downloadDir, firmware.Filename)
 
 	firmwareURL, err := url.JoinPath(d.baseURL, firmware.Filename)

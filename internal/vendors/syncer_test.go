@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 	"github.com/rclone/rclone/fs"
 	"github.com/stretchr/testify/assert"
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
 	"go.uber.org/mock/gomock"
 
 	mockinventory "github.com/metal-toolbox/firmware-syncer/internal/inventory/mocks"
@@ -67,7 +67,7 @@ func TestSyncer(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := os.TempDir()
 
-	firmware := &serverservice.ComponentFirmwareVersion{
+	firmware := &fleetdbapi.ComponentFirmwareVersion{
 		UUID:          uuid.New(),
 		Vendor:        "foo-vendor",
 		Filename:      "foobar1.zip",
@@ -78,7 +78,7 @@ func TestSyncer(t *testing.T) {
 		RepositoryURL: "repository-url",
 	}
 
-	firmwares := []*serverservice.ComponentFirmwareVersion{
+	firmwares := []*fleetdbapi.ComponentFirmwareVersion{
 		firmware,
 	}
 

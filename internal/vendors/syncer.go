@@ -13,14 +13,14 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/inventory"
 
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 type Syncer struct {
 	dstFs      fs.Fs
 	tmpFs      fs.Fs
 	downloader Downloader
-	firmwares  []*serverservice.ComponentFirmwareVersion
+	firmwares  []*fleetdbapi.ComponentFirmwareVersion
 	logger     *logrus.Logger
 	inventory  inventory.ServerService
 }
@@ -31,7 +31,7 @@ func NewSyncer(
 	tmpFs fs.Fs,
 	downloader Downloader,
 	inventoryClient inventory.ServerService,
-	firmwares []*serverservice.ComponentFirmwareVersion,
+	firmwares []*fleetdbapi.ComponentFirmwareVersion,
 	logger *logrus.Logger,
 ) Vendor {
 	SetRcloneLogging(logger)
@@ -66,7 +66,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 }
 
 // syncFirmware does the synchronization for the given firmware.
-func (s *Syncer) syncFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
+func (s *Syncer) syncFirmware(ctx context.Context, firmware *fleetdbapi.ComponentFirmwareVersion) error {
 	destPath := DstPath(firmware)
 
 	logMsg := s.logger.WithField("firmware", firmware.Filename).

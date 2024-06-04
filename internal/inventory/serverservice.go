@@ -14,7 +14,7 @@ import (
 
 	"github.com/metal-toolbox/firmware-syncer/internal/config"
 
-	serverservice "go.hollow.sh/serverservice/pkg/api/v1"
+	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 var (

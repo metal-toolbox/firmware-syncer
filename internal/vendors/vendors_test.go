@@ -49,6 +49,7 @@ func Test_TransferMetrics(t *testing.T) {
 			} else {
 				metrics.AddInt64Value(tc.int64Key, tc.int64Value)
 			}
+
 			assert.Equal(t, tc.expected, metrics.int64Values)
 		})
 	}
@@ -101,6 +102,7 @@ func Test_ExtractFromZipArchive(t *testing.T) {
 				assert.EqualError(t, err, "some error")
 				return
 			}
+
 			assert.Equal(t, tc.firmwareFilename, filepath.Base(f.Name()))
 			// Remove the unzipped file from the filesystem
 			defer os.Remove(f.Name())

@@ -25,17 +25,17 @@ var (
 //go:generate mockgen -source=serverservice.go -destination=mocks/serverservice.go ServerService
 
 type ServerService interface {
-	Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error
+	Publish(ctx context.Context, newFirmware *fleetdbapi.ComponentFirmwareVersion) error
 }
 
 type serverService struct {
 	artifactsURL string
-	client       *serverservice.Client
+	client       *fleetdbapi.Client
 	logger       *logrus.Logger
 }
 
 func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL string, logger *logrus.Logger) (ServerService, error) {
-	var client *serverservice.Client
+	var client *fleetdbapi.Client
 
 	var err error
 
@@ -45,7 +45,7 @@ func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL str
 			return nil, err
 		}
 	} else {
-		client, err = serverservice.NewClientWithToken("fake", cfg.Endpoint, nil)
+		client, err = fleetdbapi.NewClientWithToken("fake", cfg.Endpoint, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func New(ctx context.Context, cfg *config.ServerserviceOptions, artifactsURL str
 	}, nil
 }
 
-func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (client *serverservice.Client, err error) {
+func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (client *fleetdbapi.Client, err error) {
 	provider, err := oidc.NewProvider(ctx, cfg.OidcIssuerEndpoint)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (
 		EndpointParams: url.Values{"audience": {cfg.OidcAudienceEndpoint}},
 	}
 
-	client, err = serverservice.NewClient(cfg.EndpointURL.String(), oauthConfig.Client(ctx))
+	client, err = fleetdbapi.NewClient(cfg.EndpointURL.String(), oauthConfig.Client(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -80,14 +80,14 @@ func newClientWithOAuth(ctx context.Context, cfg *config.ServerserviceOptions) (
 	return client, nil
 }
 
-func (s *serverService) addRepositoryURL(fw *serverservice.ComponentFirmwareVersion) (err error) {
+func (s *serverService) addRepositoryURL(fw *fleetdbapi.ComponentFirmwareVersion) (err error) {
 	fw.RepositoryURL, err = url.JoinPath(s.artifactsURL, fw.Vendor, fw.Filename)
 
 	return err
 }
 
-func (s *serverService) getCurrentFirmware(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) (*serverservice.ComponentFirmwareVersion, error) {
-	params := serverservice.ComponentFirmwareVersionListParams{
+func (s *serverService) getCurrentFirmware(ctx context.Context, newFirmware *fleetdbapi.ComponentFirmwareVersion) (*fleetdbapi.ComponentFirmwareVersion, error) {
+	params := fleetdbapi.ComponentFirmwareVersionListParams{
 		Checksum: newFirmware.Checksum,
 	}
 
@@ -122,7 +122,7 @@ func (s *serverService) getCurrentFirmware(ctx context.Context, newFirmware *ser
 }
 
 // Publish adds firmware data to Hollow's ServerService
-func (s *serverService) Publish(ctx context.Context, newFirmware *serverservice.ComponentFirmwareVersion) error {
+func (s *serverService) Publish(ctx context.Context, newFirmware *fleetdbapi.ComponentFirmwareVersion) error {
 	if err := s.addRepositoryURL(newFirmware); err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func mergeModels(models1, models2 []string) []string {
 	return allModels
 }
 
-func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) bool {
+func isDifferent(firmware1, firmware2 *fleetdbapi.ComponentFirmwareVersion) bool {
 	if firmware1.Vendor != firmware2.Vendor {
 		return true
 	}
@@ -209,7 +209,7 @@ func isDifferent(firmware1, firmware2 *serverservice.ComponentFirmwareVersion) b
 	return false
 }
 
-func (s *serverService) createFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
+func (s *serverService) createFirmware(ctx context.Context, firmware *fleetdbapi.ComponentFirmwareVersion) error {
 	id, _, err := s.client.CreateServerComponentFirmware(ctx, *firmware)
 	if err != nil {
 		return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
@@ -224,7 +224,7 @@ func (s *serverService) createFirmware(ctx context.Context, firmware *serverserv
 	return nil
 }
 
-func (s *serverService) updateFirmware(ctx context.Context, firmware *serverservice.ComponentFirmwareVersion) error {
+func (s *serverService) updateFirmware(ctx context.Context, firmware *fleetdbapi.ComponentFirmwareVersion) error {
 	_, err := s.client.UpdateServerComponentFirmware(ctx, firmware.UUID, *firmware)
 	if err != nil {
 		return errors.Wrap(ErrServerServiceQuery, "UpdateServerComponentFirmware: "+err.Error())

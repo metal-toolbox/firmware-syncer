@@ -631,6 +631,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zk
 github.com/matttproud/golang_protobuf_extensions v1.0.4/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/metal-toolbox/fleetdb v0.18.1 h1:ytxl7xbV+ZFWO5p6jdRYHsXDrnZM2wPn5wnlOMGT1FM=
 github.com/metal-toolbox/fleetdb v0.18.1/go.mod h1:AMmaNB+R6ityOBCBIzfy5Zlc1mGQnqUvpfD+xJScDp0=
+github.com/metal-toolbox/fleetdb v0.18.3-0.20240603174318-ddc09a4f26ba h1:JTonC+4NAlRYnh+sQIR49MUnhYTkjrYR4mBVPjkgq7c=
+github.com/metal-toolbox/fleetdb v0.18.3-0.20240603174318-ddc09a4f26ba/go.mod h1:AMmaNB+R6ityOBCBIzfy5Zlc1mGQnqUvpfD+xJScDp0=
 github.com/metal-toolbox/rivets v1.0.3 h1:ZW9q8V3vz6VxAczC4eR1YJdl+kapHF3ebVc+4r3NmR8=
 github.com/metal-toolbox/rivets v1.0.3/go.mod h1:EMQJRT1mjIyFRXxvKNaBlz7Z4Sp88rTaGO8W18olN2I=
 github.com/microsoft/go-mssqldb v0.17.0/go.mod h1:OkoNGhGEs8EZqchVTtochlXruEhEOaO4S0d2sB5aeGQ=

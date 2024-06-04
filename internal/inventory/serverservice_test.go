@@ -18,9 +18,9 @@ import (
 
 type testCase struct {
 	name             string
-	existingFirmware *serverservice.ComponentFirmwareVersion
-	newFirmware      *serverservice.ComponentFirmwareVersion
-	expectedFirmware *serverservice.ComponentFirmwareVersion
+	existingFirmware *fleetdbapi.ComponentFirmwareVersion
+	newFirmware      *fleetdbapi.ComponentFirmwareVersion
+	expectedFirmware *fleetdbapi.ComponentFirmwareVersion
 }
 
 var idString = "e2458c5e-bf0b-11ee-815a-f76c5993e3ca"
@@ -36,7 +36,7 @@ func TestServerServicePublish(t *testing.T) {
 		{
 			"Post New Firmware",
 			nil,
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				Vendor:      "vendor",
 				Model:       []string{"model1", "model2"},
 				Filename:    "filename.zip",
@@ -45,7 +45,7 @@ func TestServerServicePublish(t *testing.T) {
 				Checksum:    "1234",
 				UpstreamURL: "http://some/location",
 			},
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				Vendor:        "vendor",
 				Model:         []string{"model1", "model2"},
 				Filename:      "filename.zip",
@@ -58,7 +58,7 @@ func TestServerServicePublish(t *testing.T) {
 		},
 		{
 			"Existing Firmware",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				UUID:          id,
 				Vendor:        "vendor",
 				Model:         []string{"model1", "model2"},
@@ -69,7 +69,7 @@ func TestServerServicePublish(t *testing.T) {
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
 			},
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				Vendor:      "vendor",
 				Model:       []string{"model2"},
 				Filename:    "filename.zip",
@@ -82,7 +82,7 @@ func TestServerServicePublish(t *testing.T) {
 		},
 		{
 			"Update existing Firmware",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				UUID:          id,
 				Vendor:        "vendor",
 				Model:         []string{"model1", "model3"},
@@ -93,7 +93,7 @@ func TestServerServicePublish(t *testing.T) {
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
 			},
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				Vendor:      "vendor",
 				Model:       []string{"model2", "model4"},
 				Filename:    "filename.zip",
@@ -102,7 +102,7 @@ func TestServerServicePublish(t *testing.T) {
 				Checksum:    "1234",
 				UpstreamURL: "http://some/location",
 			},
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdbapi.ComponentFirmwareVersion{
 				UUID:          id,
 				Vendor:        "vendor",
 				Model:         []string{"model1", "model2", "model3", "model4"},
@@ -126,10 +126,10 @@ func TestServerServicePublish(t *testing.T) {
 func handleGetFirmware(t *testing.T, tt *testCase, writer http.ResponseWriter) {
 	writer.Header().Set("Content-Type", "application/json")
 
-	serverResponse := &serverservice.ServerResponse{}
+	serverResponse := &fleetdbapi.ServerResponse{}
 
 	if tt.existingFirmware != nil {
-		serverResponse.Records = []*serverservice.ComponentFirmwareVersion{
+		serverResponse.Records = []*fleetdbapi.ComponentFirmwareVersion{
 			tt.existingFirmware,
 		}
 	}
@@ -150,7 +150,7 @@ func handleUpdateFirmware(t *testing.T, tt *testCase, writer http.ResponseWriter
 		t.Fatal(err)
 	}
 
-	newFirmware := &serverservice.ComponentFirmwareVersion{}
+	newFirmware := &fleetdbapi.ComponentFirmwareVersion{}
 	if err = json.Unmarshal(b, newFirmware); err != nil {
 		t.Fatal(err)
 	}

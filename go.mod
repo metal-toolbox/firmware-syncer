@@ -35,6 +35,7 @@ require (
 	golang.org/x/net v0.24.0
 	go.hollow.sh/serverservice v0.16.2
 	go.uber.org/mock v0.4.0
+	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.20.0
 )
 

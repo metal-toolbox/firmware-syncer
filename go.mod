@@ -21,22 +21,12 @@ require (
 	github.com/metal-toolbox/fleetdb v0.18.3-0.20240603174318-ddc09a4f26ba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/client_golang v1.19.0
 	github.com/rclone/rclone v1.64.2
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
-	go.hollow.sh/serverservice v0.16.2
 	go.uber.org/mock v0.4.0
 	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.21.0
-	github.com/rclone/rclone v1.64.2
-	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.9.0
-	golang.org/x/net v0.24.0
-	go.hollow.sh/serverservice v0.16.2
-	go.uber.org/mock v0.4.0
-	golang.org/x/net v0.25.0
-	golang.org/x/oauth2 v0.20.0
 )
 
 require (
@@ -70,7 +60,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/go-github/v59 v59.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
 	github.com/gosimple/slug v1.14.0 // indirect
@@ -113,9 +102,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.48.0 // indirect
-	github.com/pressly/goose/v3 v3.15.0 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/prometheus/common v0.49.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
@@ -147,30 +133,15 @@ require (
 	go.opentelemetry.io/otel/metric v1.25.0 // indirect
 	go.opentelemetry.io/otel/trace v1.25.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.25.0 // indirect
-	gocloud.dev v0.33.0 // indirect
-	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
-	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/api v0.153.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
-	google.golang.org/grpc v1.59.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	gocloud.dev v0.36.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/term v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/term v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.168.0 // indirect

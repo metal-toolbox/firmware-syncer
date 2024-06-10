@@ -18,7 +18,7 @@ require (
 	github.com/google/go-github/v53 v53.2.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
-	github.com/metal-toolbox/fleetdb v0.18.3-0.20240603174318-ddc09a4f26ba
+	github.com/metal-toolbox/fleetdb v0.18.3-0.20240606161802-38165caee0a0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rclone/rclone v1.64.2

@@ -16,6 +16,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20240510143200-3db7cecbb5a6
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v62 v62.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/metal-toolbox/fleetdb v1.18.3

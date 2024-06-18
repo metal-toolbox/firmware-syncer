@@ -212,6 +212,9 @@ func isDifferent(firmware1, firmware2 *fleetdbapi.ComponentFirmwareVersion) bool
 func (s *serverService) createFirmware(ctx context.Context, firmware *fleetdbapi.ComponentFirmwareVersion) error {
 	id, _, err := s.client.CreateServerComponentFirmware(ctx, *firmware)
 	if err != nil {
+		s.logger.WithField("firmware", firmware).
+			WithField("uuid", id).
+			Error("error in create firmware")
 		return errors.Wrap(ErrServerServiceQuery, "CreateServerComponentFirmware: "+err.Error())
 	}
 

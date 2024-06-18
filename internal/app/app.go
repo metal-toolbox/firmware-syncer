@@ -85,6 +85,7 @@ func New(ctx context.Context, inventoryKind types.InventoryKind, cfgFile, logLev
 		switch vendor {
 		case common.VendorDell:
 			downloader = vendors.NewRcloneDownloader(app.Logger)
+			app.Logger.Error(firmwares)
 		case common.VendorAsrockrack:
 			s3Fs, err := vendors.InitS3Fs(ctx, app.Config.AsRockRackRepository, "/")
 			if err != nil {

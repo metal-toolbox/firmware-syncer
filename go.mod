@@ -2,7 +2,7 @@ module github.com/metal-toolbox/firmware-syncer
 
 go 1.22
 
-toolchain go1.22.2
+toolchain go1.22.5
 
 require (
 	github.com/pkg/errors v0.9.1

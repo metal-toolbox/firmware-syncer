@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
-	github.com/bmc-toolbox/common v0.0.0-20240723142833-87832458b53b
+	github.com/bmc-toolbox/common v0.0.0-20240806132831-ba8adc6a35e3
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/google/go-github/v53 v53.2.0
 	github.com/google/uuid v1.6.0

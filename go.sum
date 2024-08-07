@@ -139,6 +139,8 @@ github.com/bmc-toolbox/common v0.0.0-20240510143200-3db7cecbb5a6 h1:qJJDtxYKk/sM
 github.com/bmc-toolbox/common v0.0.0-20240510143200-3db7cecbb5a6/go.mod h1:SY//n1PJjZfbFbmAsB6GvEKbc7UXz3d30s3kWxfJQ/c=
 github.com/bmc-toolbox/common v0.0.0-20240723142833-87832458b53b h1:0LHjikaGWlqEMczrCEZ6w1N/ZqcYlx6WRHkhabRUQEk=
 github.com/bmc-toolbox/common v0.0.0-20240723142833-87832458b53b/go.mod h1:Cdnkm+edb6C0pVkyCrwh3JTXAe0iUF9diDG/DztPI9I=
+github.com/bmc-toolbox/common v0.0.0-20240806132831-ba8adc6a35e3 h1:/BjZSX/sphptIdxpYo4wxAQkgMLyMMgfdl48J9DKNeE=
+github.com/bmc-toolbox/common v0.0.0-20240806132831-ba8adc6a35e3/go.mod h1:Cdnkm+edb6C0pVkyCrwh3JTXAe0iUF9diDG/DztPI9I=
 github.com/bradenaw/juniper v0.13.1 h1:9P7/xeaYuEyqPuJHSHCJoisWyPvZH4FAi59BxJLh7F8=
 github.com/bradenaw/juniper v0.13.1/go.mod h1:Z2B7aJlQ7xbfWsnMLROj5t/5FQ94/MkIdKC30J4WvzI=
 github.com/buengese/sgzip v0.1.1 h1:ry+T8l1mlmiWEsDrH/YHZnCVWD2S3im1KLsyO+8ZmTU=

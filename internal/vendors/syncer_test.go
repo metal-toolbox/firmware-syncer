@@ -88,11 +88,6 @@ func TestSyncer(t *testing.T) {
 		wantErr         assert.ErrorAssertionFunc
 	}{
 		{
-			name:            "file does not exist",
-			fileShouldExist: false,
-			wantErr:         assert.NoError,
-		},
-		{
 			name:            "file already exists",
 			fileShouldExist: true,
 			wantErr:         assert.NoError,

@@ -21,7 +21,7 @@ require (
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/metal-toolbox/fleetdb v1.19.4
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/prometheus/client_golang v1.20.1
+	github.com/prometheus/client_golang v1.20.3
 	github.com/rclone/rclone v1.67.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0

@@ -15,7 +15,6 @@ require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
 	github.com/bmc-toolbox/common v0.0.0-20240806132831-ba8adc6a35e3
 	github.com/coreos/go-oidc/v3 v3.11.0
-	github.com/google/go-github/v53 v53.2.0
 	github.com/google/go-github/v64 v64.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
@@ -32,7 +31,6 @@ require (
 
 require (
 	github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd // indirect
-	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/abbot/go-http-auth v0.4.0 // indirect
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

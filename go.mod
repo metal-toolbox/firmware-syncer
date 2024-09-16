@@ -18,7 +18,7 @@ require (
 	github.com/google/go-github/v64 v64.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
-	github.com/metal-toolbox/fleetdb v1.19.4
+	github.com/metal-toolbox/fleetdb v1.19.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.20.3
 	github.com/rclone/rclone v1.67.0
@@ -84,7 +84,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/metal-toolbox/rivets v1.2.0 // indirect
+	github.com/metal-toolbox/rivets v1.3.7 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

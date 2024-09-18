@@ -1,9 +1,5 @@
 linters-settings:
   govet:
-    # TODO: enable and fix struct alignments
-    #enable:
-    #  - fieldalignment
-    check-shadowing: true
     settings:
       printf:
         funcs:
@@ -46,6 +42,7 @@ linters-settings:
     extra-rules: true
   wsl:
     auto-fix: true
+shadow: true
 
 linters:
   enable:
@@ -57,19 +54,15 @@ linters:
     - ineffassign
     - stylecheck
     - misspell
-    - deadcode
     - staticcheck
-    - structcheck
     - unused
     - prealloc
     - typecheck
-    - varcheck
     # additional linters
     - bodyclose
     - gocritic
     - goerr113
     - goimports
-    - golint
     - misspell
     - noctx
     - stylecheck
@@ -81,13 +74,12 @@ linters:
 run:
   build-tags:
     - gingonic
-  skip-dirs:
+
+issues:
+  exclude-dirs:
     - scripts
     - docker
     - samples
-  #modules-download-mode: vendor
-
-issues:
   exclude-rules:
     - linters:
         - gosec

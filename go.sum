@@ -685,8 +685,12 @@ github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxU
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/metal-toolbox/fleetdb v1.19.5 h1:ERgdFAUtWnT/AeVhCGclsENmwPhU88JUcgOZAdxWKYI=
 github.com/metal-toolbox/fleetdb v1.19.5/go.mod h1:k9MZXQsJX4NfBoANst6g1468papSs0tzsSyzN3gGWuQ=
+github.com/metal-toolbox/fleetdb v1.19.7 h1:lTl67gtt5DzTdH4MgLViyXaTaH6FM8BtmM7NX7hXDZY=
+github.com/metal-toolbox/fleetdb v1.19.7/go.mod h1:IMbJwyC9DnznuPNjAaP54Y6uWuWu9cPXGH+yoe7jwGA=
 github.com/metal-toolbox/rivets v1.3.7 h1:ZM6AbX1xASS91FWi/2i2wh9twVOPJTzpD3c7fcllhBk=
 github.com/metal-toolbox/rivets v1.3.7/go.mod h1:8irU6eXgOa3QkjdcGi/aY4vqoMqCkbwVz7iVTYYPCX8=
+github.com/metal-toolbox/rivets v1.3.8 h1:BxzBPBYPMGBwJurIe+8Xji2YL7vHZUHbOmMpszWfPYw=
+github.com/metal-toolbox/rivets v1.3.8/go.mod h1:8irU6eXgOa3QkjdcGi/aY4vqoMqCkbwVz7iVTYYPCX8=
 github.com/microsoft/go-mssqldb v0.17.0/go.mod h1:OkoNGhGEs8EZqchVTtochlXruEhEOaO4S0d2sB5aeGQ=
 github.com/miekg/dns v1.1.26/go.mod h1:bPDLeHnStXmXAq1m/Ch/hvfNHr14JKNPMBo3VZKjuso=
 github.com/miekg/dns v1.1.41/go.mod h1:p6aan82bvRIyn+zDIv9xYNUpwa73JcSh9BKwknJysuI=

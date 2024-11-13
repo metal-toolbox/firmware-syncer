@@ -2,7 +2,7 @@ module github.com/metal-toolbox/firmware-syncer
 
 go 1.22
 
-toolchain go1.22.5
+toolchain go1.23.3
 
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e

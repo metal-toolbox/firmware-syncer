@@ -711,6 +711,8 @@ github.com/metal-toolbox/fleetdb v1.19.8 h1:zQzfgFWuc7lFqSJYvqbfVX4DShgFFFohWql8
 github.com/metal-toolbox/fleetdb v1.19.8/go.mod h1:IMbJwyC9DnznuPNjAaP54Y6uWuWu9cPXGH+yoe7jwGA=
 github.com/metal-toolbox/fleetdb v1.20.0 h1:ngfiWRZ61+rbYyA00/crzQTENIUbZxeo7au24P5KgKg=
 github.com/metal-toolbox/fleetdb v1.20.0/go.mod h1:8yVOYkEbxNRAvHx02g7bP6oBDiWBvhQ9HY95zI9ZtTU=
+github.com/metal-toolbox/fleetdb v1.20.1 h1:5YHnG8hFpzmRz7Ulyqs9tWPAIfJdMrUXcuWDWk/g88k=
+github.com/metal-toolbox/fleetdb v1.20.1/go.mod h1:8yVOYkEbxNRAvHx02g7bP6oBDiWBvhQ9HY95zI9ZtTU=
 github.com/metal-toolbox/rivets v1.3.7 h1:ZM6AbX1xASS91FWi/2i2wh9twVOPJTzpD3c7fcllhBk=
 github.com/metal-toolbox/rivets v1.3.7/go.mod h1:8irU6eXgOa3QkjdcGi/aY4vqoMqCkbwVz7iVTYYPCX8=
 github.com/metal-toolbox/rivets v1.3.8 h1:BxzBPBYPMGBwJurIe+8Xji2YL7vHZUHbOmMpszWfPYw=

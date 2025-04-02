@@ -202,6 +202,10 @@ func isDifferent(firmware1, firmware2 *fleetdbapi.ComponentFirmwareVersion) bool
 		return true
 	}
 
+	if firmware1.InstallInband != firmware2.InstallInband {
+		return true
+	}
+
 	if !slices.Equal(firmware1.Model, firmware2.Model) {
 		return true
 	}

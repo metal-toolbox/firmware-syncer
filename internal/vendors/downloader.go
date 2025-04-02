@@ -262,7 +262,7 @@ func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum strin
 	}
 
 	if foundFile == nil {
-		return nil, errors.New(fmt.Sprintf("couldn't find file: %s in archive: %s", firmwareFilename, archivePath))
+		return nil, fmt.Errorf("couldn't find file: %s in archive: %s", firmwareFilename, archivePath)
 	}
 
 	zipContents, err := foundFile.Open()
@@ -279,7 +279,12 @@ func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum strin
 		return nil, err
 	}
 
-	_, err = io.Copy(out, zipContents)
+	fileSize, err := toInt64(foundFile.UncompressedSize64)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.CopyN(out, zipContents, fileSize)
 	if err != nil {
 		return nil, err
 	}
@@ -296,6 +301,15 @@ func ExtractFromZipArchive(archivePath, firmwareFilename, firmwareChecksum strin
 	}
 
 	return out, nil
+}
+
+func toInt64(fileSize uint64) (int64, error) {
+	// Check if file size exceeds int64 max
+	if fileSize > uint64(int64(^uint64(0)>>1)) {
+		return 0, errors.New("file size exceeds int64 range")
+	}
+
+	return int64(fileSize), nil
 }
 
 type ArchiveDownloader struct {

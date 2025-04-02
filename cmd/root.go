@@ -20,7 +20,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "firmware-syncer",
 	Short: "Firmware syncer syncs firmware files from vendor repositories",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		if cfgFile == "" {
 			fmt.Println("No firmware-syncer configuration file found.")
 			os.Exit(1)

@@ -2,7 +2,7 @@ module github.com/metal-toolbox/firmware-syncer
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.24.1
 
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
@@ -66,7 +66,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0 // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-darwin/apfs v0.0.0-20211011131704-f84b94dbf348 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect

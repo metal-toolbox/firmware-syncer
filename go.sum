@@ -791,6 +791,8 @@ github.com/putdotio/go-putio/putio v0.0.0-20200123120452-16d982cac2b8 h1:Y258uzX
 github.com/putdotio/go-putio/putio v0.0.0-20200123120452-16d982cac2b8/go.mod h1:bSJjRokAHHOhA+XFxplld8w2R/dXLH7Z3BZ532vhFwU=
 github.com/rclone/rclone v1.69.0 h1:fRfYu6Ha2Zn+nDLUa4ZuPXogddfeZG+jsCyhbOdAamw=
 github.com/rclone/rclone v1.69.0/go.mod h1:RfT8WA1rU1/wHyujQ1r0MZFdO89zLSDgCuu62uImArg=
+github.com/rclone/rclone v1.69.1 h1:pjkfJlZjUk2DGj7vofG9baD+LKADm7zvoHFGQM1tPIA=
+github.com/rclone/rclone v1.69.1/go.mod h1:VtzXeF46F7f6CtdCrxbZJdtsVVPBVYLGYyNG+KoTxIc=
 github.com/relvacode/iso8601 v1.3.0 h1:HguUjsGpIMh/zsTczGN3DVJFxTU/GX+MMmzcKoMO7ko=
 github.com/relvacode/iso8601 v1.3.0/go.mod h1:FlNp+jz+TXpyRqgmM7tnzHHzBnz776kmAH2h3sZCn0I=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=

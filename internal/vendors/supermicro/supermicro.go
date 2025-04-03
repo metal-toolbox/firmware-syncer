@@ -105,7 +105,7 @@ func parseFilenameAndChecksum(checksumFile io.Reader) (filename, checksum string
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("parsing failed: %s", r))
+			err = fmt.Errorf("parsing failed: %s", r)
 		}
 	}()
 
@@ -119,9 +119,9 @@ func parseFilenameAndChecksum(checksumFile io.Reader) (filename, checksum string
 				checksum = strings.TrimSpace(strings.Split(line, "=")[1])
 
 				break
-			} else {
-				continue
 			}
+
+			continue
 		case strings.HasPrefix(line, "softfiles"):
 			filename = strings.Split(line, "/")[2]
 		case strings.HasPrefix(line, "MD5 CheckSum:"):

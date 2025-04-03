@@ -100,7 +100,7 @@ func parseGithubReleaseURL(ghURL string) (owner, repo, release, filename string,
 
 	components := strings.Split(u.Path, "/")
 	if len(components) != 7 {
-		return "", "", "", "", errors.New(fmt.Sprintf("parsing failed for URL path: %s", u.Path))
+		return "", "", "", "", fmt.Errorf("parsing failed for URL path: %s", u.Path)
 	}
 
 	return components[1], components[2], components[5], components[6], nil

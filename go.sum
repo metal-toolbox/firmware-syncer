@@ -691,6 +691,8 @@ github.com/metal-toolbox/bmc-common v1.0.2 h1:AbUhx4tJzz2dYxKaXu8ENSR8+bCupbqwLv
 github.com/metal-toolbox/bmc-common v1.0.2/go.mod h1:WxMpaNb7/yTSEW0fMDOWUrhs/CPAzuCSx0p3uv3vRVA=
 github.com/metal-toolbox/fleetdb v1.20.1 h1:5YHnG8hFpzmRz7Ulyqs9tWPAIfJdMrUXcuWDWk/g88k=
 github.com/metal-toolbox/fleetdb v1.20.1/go.mod h1:8yVOYkEbxNRAvHx02g7bP6oBDiWBvhQ9HY95zI9ZtTU=
+github.com/metal-toolbox/fleetdb v1.20.2 h1:QbHUX32eAC6CuiOT8mUqdef3Im5T5ueLPy9z0Wz6jNY=
+github.com/metal-toolbox/fleetdb v1.20.2/go.mod h1:8yVOYkEbxNRAvHx02g7bP6oBDiWBvhQ9HY95zI9ZtTU=
 github.com/metal-toolbox/rivets/v2 v2.0.0 h1:whXM3WLGpz1veXboXE3U/ZwwqN1mNsZ0/ElVYLoXAro=
 github.com/metal-toolbox/rivets/v2 v2.0.0/go.mod h1:MzV7K//lajUWvJ0KUoGi9ctpkJ16sQOBEC6apohJd58=
 github.com/microsoft/go-mssqldb v0.17.0/go.mod h1:OkoNGhGEs8EZqchVTtochlXruEhEOaO4S0d2sB5aeGQ=

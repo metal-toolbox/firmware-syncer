@@ -9,6 +9,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20241031162543-6b96e5981a0d
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/google/go-github/v64 v64.0.0
+	github.com/google/go-github/v70 v70.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/metal-toolbox/fleetdb v1.20.2

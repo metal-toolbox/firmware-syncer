@@ -26,6 +26,10 @@ type testCase struct {
 var idString = "e2458c5e-bf0b-11ee-815a-f76c5993e3ca"
 var artifactsURL = "https://example.com/some/path"
 
+func addressOfBool(b bool) *bool {
+	return &b
+}
+
 func TestServerServicePublish(t *testing.T) {
 	id, err := uuid.Parse(idString)
 	if err != nil {
@@ -37,13 +41,15 @@ func TestServerServicePublish(t *testing.T) {
 			"Post New Firmware",
 			nil,
 			&fleetdbapi.ComponentFirmwareVersion{
-				Vendor:      "vendor",
-				Model:       []string{"model1", "model2"},
-				Filename:    "filename.zip",
-				Version:     "1.2.3",
-				Component:   "bmc",
-				Checksum:    "1234",
-				UpstreamURL: "http://some/location",
+				Vendor:        "vendor",
+				Model:         []string{"model1", "model2"},
+				Filename:      "filename.zip",
+				Version:       "1.2.3",
+				Component:     "bmc",
+				Checksum:      "1234",
+				UpstreamURL:   "http://some/location",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(true),
 			},
 			&fleetdbapi.ComponentFirmwareVersion{
 				Vendor:        "vendor",
@@ -54,6 +60,8 @@ func TestServerServicePublish(t *testing.T) {
 				Checksum:      "1234",
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(true),
 			},
 		},
 		{
@@ -68,15 +76,19 @@ func TestServerServicePublish(t *testing.T) {
 				Checksum:      "1234",
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(false),
 			},
 			&fleetdbapi.ComponentFirmwareVersion{
-				Vendor:      "vendor",
-				Model:       []string{"model2"},
-				Filename:    "filename.zip",
-				Version:     "1.2.3",
-				Component:   "bmc",
-				Checksum:    "1234",
-				UpstreamURL: "http://some/location",
+				Vendor:        "vendor",
+				Model:         []string{"model2"},
+				Filename:      "filename.zip",
+				Version:       "1.2.3",
+				Component:     "bmc",
+				Checksum:      "1234",
+				UpstreamURL:   "http://some/location",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(false),
 			},
 			nil,
 		},
@@ -92,26 +104,31 @@ func TestServerServicePublish(t *testing.T) {
 				Checksum:      "1234",
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
+				InstallInband: addressOfBool(false),
 			},
 			&fleetdbapi.ComponentFirmwareVersion{
-				Vendor:      "vendor",
-				Model:       []string{"model2", "model4"},
-				Filename:    "filename.zip",
-				Version:     "1.2.4",
-				Component:   "bmc",
-				Checksum:    "1234",
-				UpstreamURL: "http://some/location",
+				Vendor:        "vendor",
+				Model:         []string{"model2", "model4"},
+				Filename:      "filename.zip",
+				Version:       "1.2.4",
+				Component:     "bmc",
+				Checksum:      "1234",
+				UpstreamURL:   "http://some/location",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(true),
 			},
 			&fleetdbapi.ComponentFirmwareVersion{
 				UUID:          id,
 				Vendor:        "vendor",
-				Model:         []string{"model1", "model2", "model3", "model4"},
+				Model:         []string{"model1", "model3", "model2", "model4"},
 				Filename:      "filename.zip",
 				Version:       "1.2.4",
 				Component:     "bmc",
 				Checksum:      "1234",
 				UpstreamURL:   "http://some/location",
 				RepositoryURL: "https://example.com/some/path/vendor/filename.zip",
+				InstallInband: addressOfBool(true),
+				OEM:           addressOfBool(true),
 			},
 		},
 	}

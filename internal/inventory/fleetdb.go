@@ -1,10 +1,10 @@
 package inventory
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/url"
-	"slices"
-	"sort"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -139,7 +139,12 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *fleetdbapi.Com
 	newFirmware.UUID = currentFirmware.UUID
 	newFirmware.Model = mergeModels(currentFirmware.Model, newFirmware.Model)
 
-	if isDifferent(newFirmware, currentFirmware) {
+	isDifferent, err := hasDifferences(newFirmware, currentFirmware)
+	if err != nil {
+		return err
+	}
+
+	if isDifferent {
 		return s.updateFirmware(ctx, newFirmware)
 	}
 
@@ -153,7 +158,7 @@ func (s *serverService) Publish(ctx context.Context, newFirmware *fleetdbapi.Com
 }
 
 func mergeModels(models1, models2 []string) []string {
-	allModels := []string(nil)
+	allModels := models1
 	modelsSet := make(map[string]bool)
 
 	for _, model := range models1 {
@@ -161,56 +166,30 @@ func mergeModels(models1, models2 []string) []string {
 	}
 
 	for _, model := range models2 {
-		modelsSet[model] = true
+		if !modelsSet[model] {
+			allModels = append(allModels, model)
+		}
 	}
-
-	for model := range modelsSet {
-		allModels = append(allModels, model)
-	}
-
-	sort.Strings(allModels) // For consistent ordering
 
 	return allModels
 }
 
-func isDifferent(firmware1, firmware2 *fleetdbapi.ComponentFirmwareVersion) bool {
-	if firmware1.Vendor != firmware2.Vendor {
-		return true
+// hasDifferences will return true if the two provided firmwares have differences.
+// This simply marshals the structs to JSON and does a bytes comparison.
+// Not using reflect.DeepEqual as that will also compare non-public fields (which we don't care about),
+// and can cause a panic.
+func hasDifferences(firmware1, firmware2 *fleetdbapi.ComponentFirmwareVersion) (bool, error) {
+	firmware1JSON, err := json.Marshal(firmware1)
+	if err != nil {
+		return false, err
 	}
 
-	if firmware1.Filename != firmware2.Filename {
-		return true
+	firmware2JSON, err := json.Marshal(firmware2)
+	if err != nil {
+		return false, err
 	}
 
-	if firmware1.Version != firmware2.Version {
-		return true
-	}
-
-	if firmware1.Component != firmware2.Component {
-		return true
-	}
-
-	if firmware1.Checksum != firmware2.Checksum {
-		return true
-	}
-
-	if firmware1.UpstreamURL != firmware2.UpstreamURL {
-		return true
-	}
-
-	if firmware1.RepositoryURL != firmware2.RepositoryURL {
-		return true
-	}
-
-	if firmware1.InstallInband != firmware2.InstallInband {
-		return true
-	}
-
-	if !slices.Equal(firmware1.Model, firmware2.Model) {
-		return true
-	}
-
-	return false
+	return !bytes.Equal(firmware1JSON, firmware2JSON), nil
 }
 
 func (s *serverService) createFirmware(ctx context.Context, firmware *fleetdbapi.ComponentFirmwareVersion) error {

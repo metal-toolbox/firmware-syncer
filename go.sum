@@ -183,6 +183,8 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bmc-toolbox/common v0.0.0-20241031162543-6b96e5981a0d h1:dMmFDAAEpXizInaNwPSa5LM6tX/xDIPKjL6v9jYfMxo=
 github.com/bmc-toolbox/common v0.0.0-20241031162543-6b96e5981a0d/go.mod h1:Cdnkm+edb6C0pVkyCrwh3JTXAe0iUF9diDG/DztPI9I=
+github.com/bmc-toolbox/common v0.0.0-20250114061816-fab80349cae0 h1:tsKHYBkzElymKA6Ly4fOkVCodKIJWuPnpG41qK4Qr9o=
+github.com/bmc-toolbox/common v0.0.0-20250114061816-fab80349cae0/go.mod h1:Cdnkm+edb6C0pVkyCrwh3JTXAe0iUF9diDG/DztPI9I=
 github.com/bradenaw/juniper v0.15.2 h1:0JdjBGEF2jP1pOxmlNIrPhAoQN7Ng5IMAY5D0PHMW4U=
 github.com/bradenaw/juniper v0.15.2/go.mod h1:UX4FX57kVSaDp4TPqvSjkAAewmRFAfXf27BOs5z9dq8=
 github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 h1:GKTyiRCL6zVf5wWaqKnf+7Qs6GbEPfd4iMOitWzXJx8=

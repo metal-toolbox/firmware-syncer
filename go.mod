@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
-	github.com/bmc-toolbox/common v0.0.0-20241031162543-6b96e5981a0d
+	github.com/bmc-toolbox/common v0.0.0-20250114061816-fab80349cae0
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/google/go-github/v64 v64.0.0
 	github.com/google/uuid v1.6.0

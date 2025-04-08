@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
 	github.com/bmc-toolbox/common v0.0.0-20241031162543-6b96e5981a0d
-	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/google/go-github/v64 v64.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
@@ -21,8 +21,8 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.0
-	golang.org/x/net v0.36.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/net v0.37.0
+	golang.org/x/oauth2 v0.28.0
 )
 
 require (
@@ -139,12 +139,12 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	gocloud.dev v0.40.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.211.0 // indirect

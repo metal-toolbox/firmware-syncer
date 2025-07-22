@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
 	github.com/bmc-toolbox/common v0.0.0-20250114061816-fab80349cae0
-	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/google/go-github/v64 v64.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jeremywohl/flatten v1.0.1
@@ -22,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.0
 	golang.org/x/net v0.38.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.28.0
 )
 
 require (
